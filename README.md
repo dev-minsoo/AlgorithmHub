@@ -4,6 +4,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="license"/></a>
+  <a href="https://github.com/dev-minsoo/AlgorithmHub/releases"><img src="https://img.shields.io/github/v/release/dev-minsoo/AlgorithmHub?display_name=tag" alt="release"/></a>
 </p>
 
 <p align="center">
