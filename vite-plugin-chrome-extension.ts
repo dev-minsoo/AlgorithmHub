@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import { resolve } from "node:path";
 
-const defaultPages = ["popup", "sidepanel", "options", "devtools", "devtools-page"];
+const defaultPages = ["popup", "options", "welcome"];
 
 export type ChromeExtensionPluginOptions = {
   outDir?: string;

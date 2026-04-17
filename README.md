@@ -1,110 +1,114 @@
-# React + TypeScript + Tailwind + Vite — Chrome Extension (MV3) Boilerplate
+<p align="center">
+  <img src="./public/branding/algorithmhub-wordmark.svg" alt="AlgorithmHub" width="520" />
+</p>
 
-## Overview
-Fork-and-go Chrome Extension boilerplate built with React, TypeScript, Tailwind CSS, and Vite. It targets Manifest V3 and includes common extension surfaces out of the box: Popup, Side Panel, Options, and DevTools, plus background and content scripts.
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="license"/></a>
+</p>
 
-## Features
-- MV3 service worker background
-- React + TypeScript UI surfaces
-- Tailwind CSS styling
-- Vite-based multi-entry build with HTML relocation
-- Ready-to-use Popup, Side Panel, Options, and DevTools pages
-- Background and Content script templates
+<p align="center">
+  A Chrome extension that automatically syncs accepted
+  <strong>LeetCode</strong> and <strong>Programmers</strong> submissions to GitHub.
+</p>
 
-## Supported Extension Components
-- Popup
-- Side Panel
-- Options Page
-- DevTools Panel (via devtools-page loader)
-- Background Service Worker
-- Content Script
+<p align="center">
+  <a href="./README.ko.md">한국어</a>
+  ·
+  <a href="https://github.com/dev-minsoo/AlgorithmHub/issues">Issues</a>
+</p>
 
-## Directory Structure
-```txt
-.
-├─ manifest.json
-├─ public/
-│  └─ icons/
-└─ src/
-   ├─ app/
-   │  ├─ popup/
-   │  ├─ sidepanel/
-   │  ├─ options/
-   │  ├─ devtools/
-   │  └─ devtools-page/
-   ├─ scripts/
-   │  ├─ background/
-   │  └─ content/
-   └─ shared/
-      ├─ components/
-      ├─ hooks/
-      ├─ styles/
-      └─ utils/
-```
+## What Is AlgorithmHub?
 
-## Scripts
-- `npm run dev`: start Vite dev server
-- `npm run build`: type-check + build + copy manifest into dist
-- `npm run copy-manifest`: copy `manifest.json` to `dist/manifest.json`
-- `npm run lint`: run ESLint
-- `npm run preview`: preview production build
+AlgorithmHub is a Chrome extension for people who want to keep their coding
+practice repository up to date without manually copying files after every
+accepted submission.
 
-## Build Pipeline Notes
-- `vite-plugin-chrome-extension.ts` moves generated HTML files to `dist/` root.
-- `manifest.json` remains in repo root and is copied into `dist/` by `copy-manifest`.
+It connects your GitHub repository and automatically saves accepted solutions
+from:
 
-## Getting Started
+- LeetCode
+- Programmers
 
-### Install
+## Highlights
+
+- Sync accepted submissions directly to GitHub
+- Use one extension for both LeetCode and Programmers
+- Create a new repository or connect an existing one
+- Customize repository path templates by platform
+- Keep a clean root README with platform-based summary
+
+## How does AlgorithmHub work?
+
+1. Connect your GitHub account and repository
+2. Solve a problem on LeetCode or Programmers
+3. Submit an accepted solution
+4. Let AlgorithmHub sync the solution files to GitHub automatically
+
+| LeetCode Demo | Programmers Demo |
+| --- | --- |
+| ![LeetCode demo](./docs/leetcode-demo.gif) | ![Programmers demo](./docs/programmers-demo.gif) |
+
+## Usage
+
+1. Open the extension popup
+2. Authenticate with GitHub
+3. Create a repository or connect an existing one
+4. Solve a problem on LeetCode or Programmers
+5. Submit an accepted solution
+6. Let AlgorithmHub sync it to GitHub
+
+## How to Set Up AlgorithmHub for Local Development
+
 ```bash
 npm install
-```
-
-### Develop
-```bash
-npm run dev
-```
-
-### Build
-```bash
 npm run build
+npm run lint
 ```
 
-The production build outputs to `dist/`.
+Then in Chrome:
 
-## Load Unpacked (Chrome)
-1. Build the extension:
-   ```bash
-   npm run build
-   ```
-2. Open Chrome and go to Extensions.
-3. Enable Developer mode.
-4. Click Load unpacked.
-5. Select the `dist/` folder.
+1. Open `chrome://extensions`
+2. Turn on `Developer mode`
+3. Click `Load unpacked`
+4. Select the `dist/` directory
 
-## Where to Edit
-- Popup UI: `src/app/popup/`
-- Side Panel UI: `src/app/sidepanel/`
-- Options UI: `src/app/options/`
-- DevTools UI: `src/app/devtools/`
-- DevTools loader: `src/app/devtools-page/`
-- Background (service worker): `src/scripts/background/`
-- Content script: `src/scripts/content/`
-- Shared styles/components/utils: `src/shared/`
+## Contributing
 
-## Permissions
-The default manifest includes:
-- `tabs`, `storage`, `sidePanel`
-- `host_permissions` for `<all_urls>`
-- A content script that runs on all pages
+Contributions are welcome.
 
-Update `manifest.json` to reduce permissions and narrow host matching for your use case.
+If you want to improve AlgorithmHub, you can contribute by reporting bugs,
+requesting features, or opening pull requests.
 
-## Customization
-- Update `manifest.json` (name, description, version, permissions, entry points).
-- Replace icons under `public/icons/` and reference them in the manifest.
-- Remove any surface you don’t need (and delete the manifest entry).
+### Issue Guide
 
-## Notes
-- Popup, Side Panel, Options, and DevTools are separate React entry points.
-- Background and Content scripts are built as standalone MV3 scripts.
+- Create an issue before starting larger changes
+- Use these prefixes for issue titles:
+  - `bug:` for bug reports
+  - `feat:` for feature requests
+- Include reproduction steps, expected behavior, and screenshots when relevant
+
+### Pull Request Guide
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run `npm run lint` and `npm run build`
+5. Open a pull request with a clear summary
+6. Link the related issue if one exists
+
+Use these prefixes for pull request titles:
+
+- `fix:` for bug fixes
+- `feat:` for new features
+- `chore:` for maintenance, cleanup, and non-user-facing updates
+
+## Issues
+
+If you found a bug or want to request a feature, open an issue:
+
+- https://github.com/dev-minsoo/AlgorithmHub/issues
+
+## Inspired by
+
+- [BaekjoonHub](https://github.com/BaekjoonHub/BaekjoonHub)
+- [LeetHub](https://github.com/QasimWani/LeetHub)

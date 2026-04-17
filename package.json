@@ -1,11 +1,11 @@
 {
-  "name": "react-chrome-extension-boilerplate",
+  "name": "algorithmhub",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && npm run copy-manifest",
+    "build": "tsc -b && vite build && node scripts/build-content.mjs && npm run copy-manifest",
     "copy-manifest": "cp manifest.json dist/manifest.json",
     "lint": "eslint .",
     "preview": "vite preview"
