@@ -5,6 +5,7 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="license"/></a>
   <a href="https://github.com/dev-minsoo/AlgorithmHub/releases"><img src="https://img.shields.io/github/v/release/dev-minsoo/AlgorithmHub?display_name=tag" alt="release"/></a>
+  <a href="https://chromewebstore.google.com/detail/algorithmhub/kjlimilghmpficcgaemjdgdlicjmcamb?hl=ko&utm_source=ext_sidebar"><img src="https://img.shields.io/badge/Chrome%20Web%20Store-Install%20AlgorithmHub-EA9B12?logo=googlechrome&logoColor=white" alt="chrome web store"/></a>
 </p>
 
 <p align="center">
