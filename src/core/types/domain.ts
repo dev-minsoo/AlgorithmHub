@@ -1,6 +1,7 @@
 export type PlatformId = "leetcode" | "programmers";
 export type RepositoryTemplateSegment = "platform" | "level" | "id" | "title";
 export type Locale = "ko" | "en";
+export type ThemeMode = "system" | "light" | "dark";
 
 export type GitHubSettings = {
   oauthClientId: string;
@@ -19,6 +20,7 @@ export type PlatformSettings = {
 
 export type ExtensionSettings = {
   locale: Locale;
+  themeMode: ThemeMode;
   github: GitHubSettings;
   platforms: Record<PlatformId, PlatformSettings>;
   repositoryTemplate: Record<

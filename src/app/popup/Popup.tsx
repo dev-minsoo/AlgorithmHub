@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import type { ExtensionSettings, Locale } from "../../core/types/domain";
+import type {
+  ExtensionSettings,
+  Locale,
+  ThemeMode,
+} from "../../core/types/domain";
 import type { RuntimeMessageResponse } from "../../core/types/messages";
 import { BrandWordmark } from "../../shared/components/BrandWordmark";
+import { useResolvedTheme } from "../../shared/theme";
 
 function openOptions(hash = "") {
   const url = chrome.runtime.getURL(`options.html${hash}`);
@@ -36,6 +41,7 @@ const POPUP_COPY = {
     report: "Report",
     openGitHub: "Open GitHub",
     openSettings: "Open settings",
+    toggleTheme: "Toggle theme",
   },
   ko: {
     subtitle: "코드를 GitHub에 동기화하세요",
@@ -55,6 +61,7 @@ const POPUP_COPY = {
     report: "제보",
     openGitHub: "GitHub 열기",
     openSettings: "설정 열기",
+    toggleTheme: "테마 전환",
   },
 } as const;
 
@@ -66,14 +73,16 @@ function IconButton({
   title,
   onClick,
   children,
+  className = "",
 }: {
   title: string;
   onClick: () => void;
   children: ReactNode;
+  className?: string;
 }) {
   return (
     <button
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-800 bg-stone-900 text-stone-200 transition hover:border-amber-400 hover:text-amber-300"
+      className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${className}`}
       title={title}
       onClick={onClick}
     >
@@ -110,6 +119,27 @@ function SettingsIcon() {
   );
 }
 
+function SunIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="4" strokeWidth="1.6" />
+      <path
+        d="M12 2.5v2.2M12 19.3v2.2M4.7 4.7l1.6 1.6M17.7 17.7l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.7 19.3l1.6-1.6M17.7 6.3l1.6-1.6"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
+      <path d="M20.2 14.1A8.5 8.5 0 0 1 9.9 3.8a.6.6 0 0 0-.75-.75A9.5 9.5 0 1 0 20.95 14.9a.6.6 0 0 0-.75-.8Z" />
+    </svg>
+  );
+}
+
 export default function Popup() {
   const [settings, setSettings] = useState<ExtensionSettings | null>(null);
   const [extensionEnabled, setExtensionEnabled] = useState(true);
@@ -128,12 +158,53 @@ export default function Popup() {
         setExtensionEnabled(stored.extensionEnabled);
       }
     });
+
+    const handleStorageChange: Parameters<
+      typeof chrome.storage.onChanged.addListener
+    >[0] = (changes, areaName) => {
+      if (areaName !== "local") {
+        return;
+      }
+
+      if (changes.settings?.newValue) {
+        setSettings(changes.settings.newValue as ExtensionSettings);
+      }
+
+      if (typeof changes.extensionEnabled?.newValue === "boolean") {
+        setExtensionEnabled(changes.extensionEnabled.newValue);
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handleStorageChange);
+
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange);
+    };
   }, []);
 
   const hasToken = Boolean(settings?.github.token.trim());
   const hasRepository = Boolean(settings?.github.repository.trim());
   const locale = settings?.locale ?? "en";
+  const themeMode = settings?.themeMode ?? "system";
+  const resolvedTheme = useResolvedTheme(themeMode);
   const copy = POPUP_COPY[locale];
+
+  async function handleChangeTheme(nextThemeMode: ThemeMode) {
+    const response = (await chrome.runtime.sendMessage({
+      type: "SAVE_SETTINGS",
+      settings: { themeMode: nextThemeMode },
+    })) as RuntimeMessageResponse;
+
+    if (response.type === "SETTINGS_SAVED") {
+      setSettings(response.settings);
+    }
+  }
+
+  async function handleToggleTheme() {
+    const nextThemeMode =
+      resolvedTheme === "dark" ? ("light" as ThemeMode) : ("dark" as ThemeMode);
+    await handleChangeTheme(nextThemeMode);
+  }
 
   async function handleToggleEnabled() {
     const nextValue = !extensionEnabled;
@@ -173,31 +244,75 @@ export default function Popup() {
     await openExternal("https://github.com/dev-minsoo/AlgorithmHub");
   }
 
+  const shellClass =
+    resolvedTheme === "dark"
+      ? "bg-[radial-gradient(circle_at_20%_0%,_rgba(251,191,36,0.18),_transparent_34%),radial-gradient(circle_at_100%_100%,_rgba(245,158,11,0.14),_transparent_38%),linear-gradient(180deg,_#19110b,_#090909)] text-stone-100"
+      : "bg-[radial-gradient(circle_at_20%_0%,_rgba(251,191,36,0.18),_transparent_32%),radial-gradient(circle_at_100%_100%,_rgba(245,158,11,0.10),_transparent_36%),linear-gradient(180deg,_#fdf6e8,_#fffdf8)] text-stone-900";
+  const cardClass =
+    resolvedTheme === "dark"
+      ? "border-amber-950/60 bg-[linear-gradient(180deg,rgba(41,24,13,0.96),rgba(10,10,10,0.96))] shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
+      : "border-amber-300 bg-[linear-gradient(180deg,rgba(255,255,255,0.99),rgba(255,247,232,0.98))] shadow-[0_18px_48px_rgba(180,120,0,0.12)]";
+  const panelClass =
+    resolvedTheme === "dark"
+      ? "border-stone-800 bg-stone-900/80"
+      : "border-amber-300 bg-white";
+  const mutedTextClass =
+    resolvedTheme === "dark" ? "text-stone-400" : "text-stone-700";
+  const secondaryTextClass =
+    resolvedTheme === "dark" ? "text-stone-500" : "text-stone-600";
+  const iconButtonClass =
+    resolvedTheme === "dark"
+      ? "border-stone-800 bg-stone-900 text-stone-200 hover:border-amber-400 hover:text-amber-300"
+      : "border-amber-300 bg-white text-stone-800 hover:border-amber-500 hover:text-amber-800";
+
   return (
-    <div className="w-[420px] bg-[radial-gradient(circle_at_20%_0%,_rgba(251,191,36,0.18),_transparent_34%),radial-gradient(circle_at_100%_100%,_rgba(245,158,11,0.14),_transparent_38%),linear-gradient(180deg,_#19110b,_#090909)] text-stone-100">
+    <div className={`w-[420px] ${shellClass}`}>
       <div className="w-full p-3">
-        <div className="rounded-[22px] border border-amber-950/60 bg-[linear-gradient(180deg,rgba(41,24,13,0.96),rgba(10,10,10,0.96))] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur">
+        <div className={`rounded-[22px] border p-4 backdrop-blur ${cardClass}`}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <BrandWordmark size="sm" />
-              <p className="mt-1.5 text-[13px] leading-5 text-stone-400">
+              <p className={`mt-1.5 text-[13px] leading-5 ${mutedTextClass}`}>
                 {copy.subtitle}
               </p>
             </div>
 
             <div className="flex items-center gap-2">
-              <IconButton title={copy.openGitHub} onClick={handleOpenGitHub}>
+              <IconButton
+                title={copy.openGitHub}
+                onClick={handleOpenGitHub}
+                className={iconButtonClass}
+              >
                 <GitHubIcon />
               </IconButton>
-              <IconButton title={copy.openSettings} onClick={() => openOptions()}>
+              <IconButton
+                title={copy.openSettings}
+                onClick={() => openOptions()}
+                className={iconButtonClass}
+              >
                 <SettingsIcon />
               </IconButton>
-              <div className="flex items-center rounded-full border border-stone-800 bg-stone-900 p-1 text-[11px] font-semibold text-stone-300">
+              <IconButton
+                title={copy.toggleTheme}
+                onClick={() => void handleToggleTheme()}
+                className={iconButtonClass}
+              >
+                {resolvedTheme === "dark" ? <SunIcon /> : <MoonIcon />}
+              </IconButton>
+              <div
+                className={`flex items-center rounded-full border p-1 text-[11px] font-semibold ${
+                  resolvedTheme === "dark"
+                    ? "border-stone-800 bg-stone-900 text-stone-300"
+                    : "border-amber-300 bg-white text-stone-700"
+                }`}
+              >
                 <button
                   className={`rounded-full px-2 py-1 transition ${
                     locale === "ko"
-                      ? "bg-amber-400/15 text-amber-200"
-                      : "hover:text-stone-100"
+                      ? "bg-amber-400/15 text-amber-700"
+                      : resolvedTheme === "dark"
+                        ? "hover:text-stone-100"
+                        : "hover:text-stone-900"
                   }`}
                   onClick={() => void handleChangeLocale("ko")}
                 >
@@ -206,8 +321,10 @@ export default function Popup() {
                 <button
                   className={`rounded-full px-2 py-1 transition ${
                     locale === "en"
-                      ? "bg-amber-400/15 text-amber-200"
-                      : "hover:text-stone-100"
+                      ? "bg-amber-400/15 text-amber-700"
+                      : resolvedTheme === "dark"
+                        ? "hover:text-stone-100"
+                        : "hover:text-stone-900"
                   }`}
                   onClick={() => void handleChangeLocale("en")}
                 >
@@ -218,12 +335,16 @@ export default function Popup() {
           </div>
 
           {!hasToken ? (
-            <section className="mt-4 rounded-[18px] border border-stone-800 bg-stone-900/80 p-4">
+            <section className={`mt-4 rounded-[18px] border p-4 ${panelClass}`}>
               <div className="space-y-2">
-                <p className="whitespace-nowrap text-sm font-medium text-stone-200">
+                <p
+                  className={`whitespace-nowrap text-sm font-medium ${
+                    resolvedTheme === "dark" ? "text-stone-200" : "text-stone-900"
+                  }`}
+                >
                   {copy.authTitle}
                 </p>
-                <p className="text-[13px] leading-5 text-stone-500">
+                <p className={`text-[13px] leading-5 ${secondaryTextClass}`}>
                   {copy.authDescription}
                 </p>
               </div>
@@ -237,12 +358,16 @@ export default function Popup() {
               </button>
             </section>
           ) : !hasRepository ? (
-            <section className="mt-4 rounded-[18px] border border-stone-800 bg-stone-900/80 p-4">
+            <section className={`mt-4 rounded-[18px] border p-4 ${panelClass}`}>
               <div className="space-y-2">
-                <p className="whitespace-nowrap text-sm font-medium text-stone-200">
+                <p
+                  className={`whitespace-nowrap text-sm font-medium ${
+                    resolvedTheme === "dark" ? "text-stone-200" : "text-stone-900"
+                  }`}
+                >
                   {copy.connectTitle}
                 </p>
-                <p className="text-[13px] leading-5 text-stone-500">
+                <p className={`text-[13px] leading-5 ${secondaryTextClass}`}>
                   {copy.connectDescription}
                 </p>
               </div>
@@ -256,19 +381,37 @@ export default function Popup() {
               </button>
             </section>
           ) : (
-            <section className="mt-4 rounded-[18px] border border-emerald-900/50 bg-emerald-950/30 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-400">
+            <section
+              className={`mt-4 rounded-[18px] border p-4 ${
+                resolvedTheme === "dark"
+                  ? "border-emerald-900/50 bg-emerald-950/30"
+                  : "border-emerald-300 bg-emerald-50"
+              }`}
+            >
+              <p
+                className={`text-xs font-semibold uppercase tracking-[0.24em] ${
+                  resolvedTheme === "dark" ? "text-emerald-400" : "text-emerald-700"
+                }`}
+              >
                 {copy.connected}
               </p>
-              <p className="mt-2 break-all text-[15px] font-medium text-stone-50">
+              <p
+                className={`mt-2 break-all text-[15px] font-medium ${
+                  resolvedTheme === "dark" ? "text-stone-50" : "text-stone-900"
+                }`}
+              >
                 {settings?.github.repository}
               </p>
             </section>
           )}
 
           {hasRepository ? (
-            <div className="mt-4 flex items-center justify-between rounded-[16px] border border-stone-800 bg-stone-900/70 px-4 py-3">
-              <p className="text-sm font-medium text-stone-100">
+            <div className={`mt-4 flex items-center justify-between rounded-[16px] border px-4 py-3 ${panelClass}`}>
+              <p
+                className={`text-sm font-medium ${
+                  resolvedTheme === "dark" ? "text-stone-100" : "text-stone-900"
+                }`}
+              >
                 {copy.autoUpload} {extensionEnabled ? copy.enabled : copy.disabled}
               </p>
 
@@ -290,7 +433,7 @@ export default function Popup() {
 
           <div className={`${hasRepository ? "mt-3" : "mt-4"} flex items-center justify-end gap-3`}>
             <a
-              className="text-xs font-medium text-stone-400 transition hover:text-amber-300"
+              className={`text-xs font-medium transition hover:text-amber-300 ${mutedTextClass}`}
               href={REPOSITORY_URL}
               target="_blank"
               rel="noreferrer"
@@ -298,7 +441,7 @@ export default function Popup() {
               {copy.star}
             </a>
             <a
-              className="text-xs font-medium text-stone-400 transition hover:text-amber-300"
+              className={`text-xs font-medium transition hover:text-amber-300 ${mutedTextClass}`}
               href={ISSUE_URL}
               target="_blank"
               rel="noreferrer"

@@ -9,15 +9,18 @@ import type {
   Locale,
   PlatformId,
   RepositoryTemplateSegment,
+  ThemeMode,
 } from "../../core/types/domain";
 import type { RuntimeMessageResponse } from "../../core/types/messages";
 import { BrandWordmark } from "../../shared/components/BrandWordmark";
+import { useResolvedTheme } from "../../shared/theme";
 
 const ISSUE_URL = "https://github.com/dev-minsoo/AlgorithmHub/issues";
 const REPOSITORY_URL = "https://github.com/dev-minsoo/AlgorithmHub";
 
 const emptySettings: ExtensionSettings = {
   locale: "en",
+  themeMode: "system",
   github: {
     oauthClientId: "",
     token: "",
@@ -78,6 +81,10 @@ const OPTIONS_COPY = {
     noRepository: "No repository connected",
     connectHint: "Connect a repository from the welcome flow first.",
     solving: "Start solving problems right away:",
+    theme: "Theme",
+    themeSystem: "System",
+    themeLight: "Light",
+    themeDark: "Dark",
     language: "Language",
     autoUpload: "Auto Upload",
     enabled: "Enabled",
@@ -102,6 +109,10 @@ const OPTIONS_COPY = {
     noRepository: "연결된 저장소가 없습니다",
     connectHint: "먼저 welcome 화면에서 저장소를 연결하세요.",
     solving: "바로 문제를 풀어보세요:",
+    theme: "테마",
+    themeSystem: "System",
+    themeLight: "Light",
+    themeDark: "Dark",
     language: "언어",
     autoUpload: "자동 업로드",
     enabled: "활성화",
@@ -137,6 +148,7 @@ function PathTemplateCard({
   onToggleSegment,
   onToggleCombine,
   copy,
+  resolvedTheme,
 }: {
   platform: PlatformId;
   settings: ExtensionSettings;
@@ -152,6 +164,7 @@ function PathTemplateCard({
   ) => Promise<void>;
   onToggleCombine: (platform: PlatformId) => Promise<void>;
   copy: OptionsCopy;
+  resolvedTheme: "light" | "dark";
 }) {
   const template = settings.repositoryTemplate[platform];
   const previewPath = buildRepositoryDirectory(template, {
@@ -163,18 +176,40 @@ function PathTemplateCard({
   const fileName = platform === "leetcode" ? "solution.py" : "solution.js";
 
   return (
-    <div className="rounded-[20px] border border-stone-800 bg-stone-900/60 p-5">
+    <div
+      className={`rounded-[20px] border p-5 ${
+        resolvedTheme === "dark"
+          ? "border-stone-800 bg-stone-900/60"
+          : "border-amber-300 bg-white"
+      }`}
+    >
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">
         {platform === "leetcode" ? copy.templateLeetCode : copy.templateProgrammers}
       </p>
-      <p className="mt-2 text-sm leading-6 text-stone-400">
+      <p
+        className={`mt-2 text-sm leading-6 ${
+          resolvedTheme === "dark" ? "text-stone-400" : "text-stone-700"
+        }`}
+      >
         {copy.templateHint}
       </p>
 
-      <div className="mt-4 rounded-[14px] border border-stone-800 bg-stone-950/70 px-4 py-3">
+      <div
+        className={`mt-4 rounded-[14px] border px-4 py-3 ${
+          resolvedTheme === "dark"
+            ? "border-stone-800 bg-stone-950/70"
+            : "border-amber-300 bg-amber-50"
+        }`}
+      >
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-stone-100">{copy.combine}</p>
+            <p
+              className={`text-sm font-semibold ${
+                resolvedTheme === "dark" ? "text-stone-100" : "text-stone-900"
+              }`}
+            >
+              {copy.combine}
+            </p>
           </div>
           <button
             className={`relative h-7 w-12 rounded-full transition ${
@@ -206,8 +241,12 @@ function PathTemplateCard({
               key={`${platform}:${segment}`}
               className={`flex items-center justify-between rounded-[14px] border px-4 py-3 transition ${
                 active
-                  ? "border-stone-700 bg-stone-950/80"
-                  : "border-stone-800 bg-stone-950/40"
+                  ? resolvedTheme === "dark"
+                    ? "border-stone-700 bg-stone-950/80"
+                    : "border-amber-300 bg-white"
+                  : resolvedTheme === "dark"
+                    ? "border-stone-800 bg-stone-950/40"
+                    : "border-amber-200 bg-amber-50/70"
               }`}
               draggable={active}
               onDragStart={() => {
@@ -246,13 +285,23 @@ function PathTemplateCard({
               <div className="flex items-center gap-3">
                 <span
                   className={`text-base ${
-                    active ? "cursor-grab text-stone-500" : "text-stone-700"
+                    active
+                      ? resolvedTheme === "dark"
+                        ? "cursor-grab text-stone-500"
+                        : "cursor-grab text-stone-400"
+                      : resolvedTheme === "dark"
+                        ? "text-stone-700"
+                        : "text-stone-300"
                   }`}
                   aria-hidden="true"
                 >
                   ≡
                 </span>
-                <span className="text-sm font-semibold text-stone-100">
+                <span
+                  className={`text-sm font-semibold ${
+                    resolvedTheme === "dark" ? "text-stone-100" : "text-stone-900"
+                  }`}
+                >
                   {TEMPLATE_SEGMENT_LABELS[segment]}
                 </span>
               </div>
@@ -277,7 +326,13 @@ function PathTemplateCard({
         })}
       </div>
 
-      <div className="mt-4 rounded-[14px] border border-stone-800 bg-stone-950/80 px-4 py-3 text-sm leading-6 text-stone-200">
+      <div
+        className={`mt-4 rounded-[14px] border px-4 py-3 text-sm leading-6 ${
+          resolvedTheme === "dark"
+            ? "border-stone-800 bg-stone-950/80 text-stone-200"
+            : "border-amber-300 bg-amber-50 text-stone-900"
+        }`}
+      >
         {previewPath}/{fileName}
       </div>
     </div>
@@ -429,9 +484,38 @@ export default function Options() {
 
   const isConnected = Boolean(settings.github.repository.trim());
   const copy = OPTIONS_COPY[settings.locale];
+  const resolvedTheme = useResolvedTheme(settings.themeMode);
+
+  async function handleChangeTheme(themeMode: ThemeMode) {
+    const response = (await chrome.runtime.sendMessage({
+      type: "SAVE_SETTINGS",
+      settings: { themeMode },
+    })) as RuntimeMessageResponse;
+
+    if (response.type === "SETTINGS_SAVED") {
+      setSettings(response.settings);
+    }
+  }
+
+  const pageClass =
+    resolvedTheme === "dark"
+      ? "min-h-screen bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.16),_transparent_30%),linear-gradient(180deg,_#140f0c,_#060606)] text-stone-100"
+      : "min-h-screen bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.16),_transparent_30%),linear-gradient(180deg,_#fcf5e8,_#fffdf8)] text-stone-900";
+  const shellClass =
+    resolvedTheme === "dark"
+      ? "border-amber-950/60 bg-[linear-gradient(180deg,rgba(41,24,13,0.92),rgba(12,12,12,0.94))] shadow-[0_24px_80px_rgba(0,0,0,0.45)]"
+      : "border-amber-300 bg-[linear-gradient(180deg,rgba(255,255,255,0.99),rgba(255,247,232,0.98))] shadow-[0_24px_64px_rgba(180,120,0,0.10)]";
+  const cardClass =
+    resolvedTheme === "dark"
+      ? "border-stone-800 bg-stone-950/60"
+      : "border-amber-300 bg-white";
+  const rowClass =
+    resolvedTheme === "dark"
+      ? "border-stone-800 bg-stone-900/70"
+      : "border-amber-300 bg-amber-50/85";
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.16),_transparent_30%),linear-gradient(180deg,_#140f0c,_#060606)] text-stone-100">
+    <div className={pageClass}>
       <div className="mx-auto max-w-5xl px-4 py-10">
         <header className="mb-8">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-400">
@@ -440,20 +524,42 @@ export default function Options() {
           <div className="mt-3">
             <BrandWordmark size="lg" />
           </div>
-          <p className="mt-2 text-sm leading-6 text-stone-400">
+          <p
+            className={`mt-2 text-sm leading-6 ${
+              resolvedTheme === "dark" ? "text-stone-400" : "text-stone-700"
+            }`}
+          >
             {copy.description}
           </p>
         </header>
 
-        <section className="rounded-[28px] border border-amber-950/60 bg-[linear-gradient(180deg,rgba(41,24,13,0.92),rgba(12,12,12,0.94))] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.45)] sm:p-6">
-          <div className="rounded-[22px] border border-emerald-900/50 bg-emerald-950/30 p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-400">
+        <section className={`rounded-[28px] border p-5 sm:p-6 ${shellClass}`}>
+          <div
+            className={`rounded-[22px] border p-6 ${
+              resolvedTheme === "dark"
+                ? "border-emerald-900/50 bg-emerald-950/30"
+                : "border-emerald-300 bg-emerald-50"
+            }`}
+          >
+            <p
+              className={`text-xs font-semibold uppercase tracking-[0.24em] ${
+                resolvedTheme === "dark" ? "text-emerald-400" : "text-emerald-700"
+              }`}
+            >
               {copy.connected}
             </p>
             {isConnected ? (
-              <p className="mt-3 break-all text-lg font-medium text-stone-50">
+              <p
+                className={`mt-3 break-all text-lg font-medium ${
+                  resolvedTheme === "dark" ? "text-stone-50" : "text-stone-900"
+                }`}
+              >
                 <a
-                  className="underline decoration-emerald-700 underline-offset-4 transition hover:text-emerald-200"
+                  className={`underline underline-offset-4 transition ${
+                    resolvedTheme === "dark"
+                      ? "decoration-emerald-700 hover:text-emerald-200"
+                      : "decoration-emerald-500 hover:text-emerald-800"
+                  }`}
                   href={`https://github.com/${settings.github.repository}`}
                   target="_blank"
                   rel="noreferrer"
@@ -462,22 +568,38 @@ export default function Options() {
                 </a>
               </p>
             ) : (
-              <p className="mt-3 break-all text-lg font-medium text-stone-50">
+              <p
+                className={`mt-3 break-all text-lg font-medium ${
+                  resolvedTheme === "dark" ? "text-stone-50" : "text-stone-900"
+                }`}
+              >
                 {copy.noRepository}
               </p>
             )}
             {!isConnected ? (
-              <p className="mt-1 text-sm text-stone-500">
+              <p
+                className={`mt-1 text-sm ${
+                  resolvedTheme === "dark" ? "text-stone-500" : "text-stone-600"
+                }`}
+              >
                 {copy.connectHint}
               </p>
             ) : null}
 
             <div className="mt-5 flex flex-wrap items-center gap-4 text-sm">
-              <p className="text-sm text-stone-300">
+              <p
+                className={`text-sm ${
+                  resolvedTheme === "dark" ? "text-stone-300" : "text-stone-700"
+                }`}
+              >
                 {copy.solving}
               </p>
               <a
-                className="font-medium text-cyan-300 transition hover:text-cyan-200"
+                className={`font-medium transition ${
+                  resolvedTheme === "dark"
+                    ? "text-cyan-300 hover:text-cyan-200"
+                    : "text-cyan-700 hover:text-cyan-800"
+                }`}
                 href="https://leetcode.com/"
                 target="_blank"
                 rel="noreferrer"
@@ -485,7 +607,11 @@ export default function Options() {
                 LeetCode
               </a>
               <a
-                className="font-medium text-cyan-300 transition hover:text-cyan-200"
+                className={`font-medium transition ${
+                  resolvedTheme === "dark"
+                    ? "text-cyan-300 hover:text-cyan-200"
+                    : "text-cyan-700 hover:text-cyan-800"
+                }`}
                 href="https://school.programmers.co.kr/learn/challenges"
                 target="_blank"
                 rel="noreferrer"
@@ -495,10 +621,14 @@ export default function Options() {
             </div>
           </div>
 
-          <div className="mt-5 rounded-[22px] border border-stone-800 bg-stone-950/60 p-5">
+          <div className={`mt-5 rounded-[22px] border p-5 ${cardClass}`}>
             <div className="space-y-4">
-              <div className="flex min-h-[60px] items-center justify-between gap-4 rounded-[16px] border border-stone-800 bg-stone-900/70 px-4 py-4">
-                <p className="text-sm font-medium text-stone-100">
+              <div className={`flex min-h-[60px] items-center justify-between gap-4 rounded-[16px] border px-4 py-4 ${rowClass}`}>
+                <p
+                  className={`text-sm font-medium ${
+                    resolvedTheme === "dark" ? "text-stone-100" : "text-stone-900"
+                  }`}
+                >
                   {copy.autoUpload} {extensionEnabled ? copy.enabled : copy.disabled}
                 </p>
                 <button
@@ -517,12 +647,45 @@ export default function Options() {
                 </button>
               </div>
 
-              <div className="flex min-h-[60px] items-center justify-between gap-4 rounded-[16px] border border-stone-800 bg-stone-900/70 px-4 py-4">
-                <span className="text-sm font-medium text-stone-100">
+              <div className={`flex min-h-[60px] items-center justify-between gap-4 rounded-[16px] border px-4 py-4 ${rowClass}`}>
+                <span
+                  className={`text-sm font-medium ${
+                    resolvedTheme === "dark" ? "text-stone-100" : "text-stone-900"
+                  }`}
+                >
+                  {copy.theme}
+                </span>
+                <select
+                  className={`h-[44px] w-[132px] rounded-[14px] border px-3 text-sm outline-none transition ${
+                    resolvedTheme === "dark"
+                      ? "border-stone-800 bg-stone-950/80 text-stone-100 focus:border-amber-400"
+                      : "border-amber-300 bg-white text-stone-900 focus:border-amber-600"
+                  }`}
+                  value={settings.themeMode}
+                  onChange={(event) =>
+                    void handleChangeTheme(event.target.value as ThemeMode)
+                  }
+                >
+                  <option value="system">{copy.themeSystem}</option>
+                  <option value="light">{copy.themeLight}</option>
+                  <option value="dark">{copy.themeDark}</option>
+                </select>
+              </div>
+
+              <div className={`flex min-h-[60px] items-center justify-between gap-4 rounded-[16px] border px-4 py-4 ${rowClass}`}>
+                <span
+                  className={`text-sm font-medium ${
+                    resolvedTheme === "dark" ? "text-stone-100" : "text-stone-900"
+                  }`}
+                >
                   {copy.language}
                 </span>
                 <select
-                  className="h-[44px] w-[132px] rounded-[14px] border border-stone-800 bg-stone-950/80 px-3 text-sm text-stone-100 outline-none transition focus:border-amber-400"
+                  className={`h-[44px] w-[132px] rounded-[14px] border px-3 text-sm outline-none transition ${
+                    resolvedTheme === "dark"
+                      ? "border-stone-800 bg-stone-950/80 text-stone-100 focus:border-amber-400"
+                      : "border-amber-300 bg-white text-stone-900 focus:border-amber-600"
+                  }`}
                   value={settings.locale}
                   onChange={(event) =>
                     void handleChangeLocale(event.target.value as Locale)
@@ -535,7 +698,7 @@ export default function Options() {
             </div>
           </div>
 
-          <div className="mt-5 rounded-[22px] border border-stone-800 bg-stone-950/60 p-5">
+          <div className={`mt-5 rounded-[22px] border p-5 ${cardClass}`}>
             <button
               className="flex w-full items-start justify-between gap-4 text-left"
               onClick={() => setTemplatesOpen((current) => !current)}
@@ -545,10 +708,18 @@ export default function Options() {
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-400">
                   {copy.templatesEyebrow}
                 </p>
-                <p className="mt-2 text-lg font-medium text-stone-50">
+                <p
+                  className={`mt-2 text-lg font-medium ${
+                    resolvedTheme === "dark" ? "text-stone-50" : "text-stone-900"
+                  }`}
+                >
                   {copy.templatesTitle}
                 </p>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-400">
+                <p
+                  className={`mt-2 max-w-3xl text-sm leading-6 ${
+                    resolvedTheme === "dark" ? "text-stone-400" : "text-stone-700"
+                  }`}
+                >
                   {copy.templatesDescription}
                 </p>
               </div>
@@ -575,6 +746,7 @@ export default function Options() {
                   onToggleSegment={toggleTemplateSegment}
                   onToggleCombine={toggleCombineIdTitle}
                   copy={copy}
+                  resolvedTheme={resolvedTheme}
                 />
                 <PathTemplateCard
                   platform="programmers"
@@ -585,6 +757,7 @@ export default function Options() {
                   onToggleSegment={toggleTemplateSegment}
                   onToggleCombine={toggleCombineIdTitle}
                   copy={copy}
+                  resolvedTheme={resolvedTheme}
                 />
               </div>
             ) : null}
@@ -592,7 +765,11 @@ export default function Options() {
 
           <div className="mt-6 flex items-center justify-between gap-3">
             <button
-              className="rounded-[16px] border border-red-900/70 bg-red-950/30 px-5 py-3 text-sm font-semibold text-red-100 transition hover:border-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className={`rounded-[16px] border px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                resolvedTheme === "dark"
+                  ? "border-red-900/70 bg-red-950/30 text-red-100 hover:border-red-700"
+                  : "border-red-300 bg-red-50 text-red-700 hover:border-red-400 hover:bg-red-100 hover:text-red-800"
+              }`}
               onClick={() => void disconnectRepository()}
               disabled={!isConnected}
             >
@@ -600,7 +777,11 @@ export default function Options() {
             </button>
             <div className="flex items-center gap-4">
               <a
-                className="text-sm font-medium text-cyan-300 transition hover:text-cyan-200"
+                className={`text-sm font-medium transition ${
+                  resolvedTheme === "dark"
+                    ? "text-cyan-300 hover:text-cyan-200"
+                    : "text-cyan-700 hover:text-cyan-800"
+                }`}
                 href={REPOSITORY_URL}
                 target="_blank"
                 rel="noreferrer"
@@ -608,7 +789,11 @@ export default function Options() {
                 {copy.star}
               </a>
               <a
-                className="text-sm font-medium text-stone-400 transition hover:text-amber-300"
+                className={`text-sm font-medium transition ${
+                  resolvedTheme === "dark"
+                    ? "text-stone-400 hover:text-amber-300"
+                    : "text-stone-600 hover:text-amber-700"
+                }`}
                 href={ISSUE_URL}
                 target="_blank"
                 rel="noreferrer"

@@ -26,6 +26,7 @@ function createDefaultTemplateConfig() {
 
 export const DEFAULT_SETTINGS: ExtensionSettings = {
   locale: "en",
+  themeMode: "system",
   github: {
     oauthClientId: DEFAULT_GITHUB_OAUTH_CLIENT_ID,
     token: "",
@@ -59,6 +60,7 @@ function mergeSettings(
 ): ExtensionSettings {
   return {
     locale: patch.locale ?? current.locale,
+    themeMode: patch.themeMode ?? current.themeMode,
     github: {
       ...current.github,
       ...patch.github,

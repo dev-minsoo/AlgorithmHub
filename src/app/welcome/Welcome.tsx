@@ -4,11 +4,13 @@ import { getCachedGitHubRepositories } from "../../core/storage/repositories";
 import type { ExtensionSettings, RepositoryInfo } from "../../core/types/domain";
 import type { RuntimeMessageResponse } from "../../core/types/messages";
 import { BrandWordmark } from "../../shared/components/BrandWordmark";
+import { useResolvedTheme } from "../../shared/theme";
 
 type RepoMode = "" | "new" | "link";
 
 const emptySettings: ExtensionSettings = {
   locale: "en",
+  themeMode: "system",
   github: {
     oauthClientId: "",
     token: "",
@@ -67,6 +69,7 @@ export default function Welcome() {
   const [selectedRepository, setSelectedRepository] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const resolvedTheme = useResolvedTheme(settings.themeMode);
 
   const loadRepositories = useCallback(async (token = settings.github.token) => {
     if (!token.trim()) {
@@ -132,6 +135,24 @@ export default function Welcome() {
           }
         }
       })();
+
+    const handleStorageChange: Parameters<
+      typeof chrome.storage.onChanged.addListener
+    >[0] = (changes, areaName) => {
+      if (areaName !== "local") {
+        return;
+      }
+
+      if (changes.settings?.newValue) {
+        setSettings(changes.settings.newValue as ExtensionSettings);
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handleStorageChange);
+
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange);
+    };
   }, [loadRepositories]);
 
   async function handleAuthenticateGitHub() {
@@ -204,19 +225,40 @@ export default function Welcome() {
     (mode === "new" && !repositoryName.trim()) ||
     (mode === "link" && !selectedRepository.trim());
 
+  const pageClass =
+    resolvedTheme === "dark"
+      ? "min-h-screen bg-[radial-gradient(circle_at_20%_0%,_rgba(251,191,36,0.16),_transparent_34%),radial-gradient(circle_at_100%_100%,_rgba(245,158,11,0.12),_transparent_38%),linear-gradient(180deg,_#19110b,_#090909)] text-stone-100"
+      : "min-h-screen bg-[radial-gradient(circle_at_20%_0%,_rgba(251,191,36,0.16),_transparent_32%),radial-gradient(circle_at_100%_100%,_rgba(245,158,11,0.10),_transparent_36%),linear-gradient(180deg,_#fcf5e8,_#fffdf8)] text-stone-900";
+  const shellClass =
+    resolvedTheme === "dark"
+      ? "border-amber-950/60 bg-[linear-gradient(180deg,rgba(41,24,13,0.96),rgba(10,10,10,0.96))] shadow-[0_24px_80px_rgba(0,0,0,0.5)]"
+      : "border-amber-300 bg-[linear-gradient(180deg,rgba(255,255,255,0.99),rgba(255,247,232,0.98))] shadow-[0_24px_64px_rgba(180,120,0,0.10)]";
+  const panelClass =
+    resolvedTheme === "dark"
+      ? "border-stone-800 bg-stone-950/60"
+      : "border-amber-300 bg-white";
+
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_20%_0%,_rgba(251,191,36,0.16),_transparent_34%),radial-gradient(circle_at_100%_100%,_rgba(245,158,11,0.12),_transparent_38%),linear-gradient(180deg,_#19110b,_#090909)] px-6 py-10 text-stone-100">
+    <main className={`${pageClass} px-6 py-10`}>
       <div className="mx-auto max-w-3xl">
-        <section className="rounded-[32px] border border-amber-950/60 bg-[linear-gradient(180deg,rgba(41,24,13,0.96),rgba(10,10,10,0.96))] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
+        <section className={`rounded-[32px] border p-8 ${shellClass}`}>
           <div className="text-center">
             <BrandWordmark size="xl" align="center" />
-            <p className="mt-4 text-lg text-stone-400">
+            <p
+              className={`mt-4 text-lg ${
+                resolvedTheme === "dark" ? "text-stone-400" : "text-stone-700"
+              }`}
+            >
               Automatically sync your accepted LeetCode and Programmers solutions to GitHub.
             </p>
           </div>
 
-          <section className="mx-auto mt-10 max-w-2xl rounded-[24px] border border-stone-800 bg-stone-950/60 p-6">
-            <p className="text-center text-xl font-semibold text-stone-50">
+          <section className={`mx-auto mt-10 max-w-2xl rounded-[24px] border p-6 ${panelClass}`}>
+            <p
+              className={`text-center text-xl font-semibold ${
+                resolvedTheme === "dark" ? "text-stone-50" : "text-stone-900"
+              }`}
+            >
               Connect a repository to get started
             </p>
 
@@ -229,7 +271,11 @@ export default function Welcome() {
               </label>
               <select
                 id="setupMode"
-                className="mt-2 w-full rounded-[16px] border border-stone-800 bg-stone-900/80 px-4 py-3 text-sm text-stone-100 outline-none transition focus:border-amber-400"
+                className={`mt-2 w-full rounded-[16px] border px-4 py-3 text-sm outline-none transition ${
+                  resolvedTheme === "dark"
+                    ? "border-stone-800 bg-stone-900/80 text-stone-100 focus:border-amber-400"
+                    : "border-amber-300 bg-white text-stone-900 focus:border-amber-600"
+                }`}
                 value={mode}
                 onChange={(event) => {
                   const nextMode = event.target.value as RepoMode;
@@ -259,7 +305,11 @@ export default function Welcome() {
                 </label>
                 <input
                   id="repositoryName"
-                  className="mt-2 w-full rounded-[16px] border border-stone-800 bg-stone-900/80 px-4 py-3 text-sm text-stone-100 outline-none transition placeholder:text-stone-600 focus:border-amber-400"
+                  className={`mt-2 w-full rounded-[16px] border px-4 py-3 text-sm outline-none transition placeholder:text-stone-500 ${
+                    resolvedTheme === "dark"
+                      ? "border-stone-800 bg-stone-900/80 text-stone-100 focus:border-amber-400"
+                      : "border-amber-300 bg-white text-stone-900 focus:border-amber-600"
+                  }`}
                   value={repositoryName}
                   onChange={(event) => setRepositoryName(event.target.value)}
                   placeholder="algorithm"
@@ -270,8 +320,18 @@ export default function Welcome() {
             {mode === "link" ? (
               <div className="mt-5">
                 {!settings.github.token.trim() ? (
-                  <div className="rounded-[16px] border border-stone-800 bg-stone-900/70 p-4">
-                    <p className="text-sm text-stone-300">
+                  <div
+                    className={`rounded-[16px] border p-4 ${
+                      resolvedTheme === "dark"
+                        ? "border-stone-800 bg-stone-900/70"
+                        : "border-amber-300 bg-amber-50"
+                    }`}
+                  >
+                    <p
+                      className={`text-sm ${
+                        resolvedTheme === "dark" ? "text-stone-300" : "text-stone-700"
+                      }`}
+                    >
                       Authenticate with GitHub to load your repositories.
                     </p>
                     <button
@@ -291,7 +351,11 @@ export default function Welcome() {
                         Existing repository
                       </label>
                       <button
-                        className="rounded-full border border-stone-800 bg-stone-900/80 px-3 py-1.5 text-[11px] font-semibold text-stone-300 transition hover:border-amber-400 hover:text-amber-200"
+                        className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
+                          resolvedTheme === "dark"
+                            ? "border-stone-800 bg-stone-900/80 text-stone-300 hover:border-amber-400 hover:text-amber-200"
+                            : "border-amber-300 bg-white text-stone-700 hover:border-amber-500 hover:text-amber-800"
+                        }`}
                         onClick={() => void handleAuthenticateGitHub()}
                         type="button"
                       >
@@ -300,7 +364,11 @@ export default function Welcome() {
                     </div>
                     <select
                       id="existingRepository"
-                      className="mt-2 w-full rounded-[16px] border border-stone-800 bg-stone-900/80 px-4 py-3 text-sm text-stone-100 outline-none transition focus:border-amber-400"
+                      className={`mt-2 w-full rounded-[16px] border px-4 py-3 text-sm outline-none transition ${
+                        resolvedTheme === "dark"
+                          ? "border-stone-800 bg-stone-900/80 text-stone-100 focus:border-amber-400"
+                          : "border-amber-300 bg-white text-stone-900 focus:border-amber-600"
+                      }`}
                       value={selectedRepository}
                       onChange={(event) => setSelectedRepository(event.target.value)}
                     >
@@ -318,7 +386,11 @@ export default function Welcome() {
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <button
-                className="rounded-[16px] bg-stone-100 px-5 py-3 text-sm font-semibold text-stone-950 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                className={`rounded-[16px] px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  resolvedTheme === "dark"
+                    ? "bg-stone-100 text-stone-950 hover:bg-white"
+                    : "bg-amber-500 text-white hover:bg-amber-600"
+                }`}
                 onClick={() => void handleContinue()}
                 disabled={isGetStartedDisabled}
               >
@@ -327,7 +399,13 @@ export default function Welcome() {
             </div>
 
             {message ? (
-              <p className="mt-4 text-sm text-stone-300">{message}</p>
+              <p
+                className={`mt-4 text-sm ${
+                  resolvedTheme === "dark" ? "text-stone-300" : "text-stone-700"
+                }`}
+              >
+                {message}
+              </p>
             ) : null}
           </section>
         </section>
