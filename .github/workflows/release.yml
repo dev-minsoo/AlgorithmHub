@@ -38,13 +38,7 @@ jobs:
       - name: Run lint
         run: npm run lint
 
-      - name: Run build
-        run: npm run build
-
-      - name: Package Chrome Web Store zip
-        run: cd dist && zip -r ../algorithmhub-webstore.zip .
-
       - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx -p semantic-release@25 -p @semantic-release/commit-analyzer@13 -p @semantic-release/release-notes-generator@14 -p @semantic-release/github@12 semantic-release
+        run: npx -p semantic-release@25 -p @semantic-release/commit-analyzer@13 -p @semantic-release/release-notes-generator@14 -p @semantic-release/exec@7 -p @semantic-release/github@12 semantic-release
