@@ -7,9 +7,13 @@ import {
 import { sendRuntimeMessage } from "../../shared/runtime";
 import type { ExtensionSettings } from "../../core/types/domain";
 import type { RuntimeMessageResponse } from "../../core/types/messages";
-import type { UploadJob } from "../../core/types/upload";
+import type { ProblemNoteRequest, UploadJob } from "../../core/types/upload";
 import type { PlatformAdapter } from "../types";
-import { uploadThroughBackground } from "../upload";
+import { openSyncedActionsModal } from "../problemActionsModal";
+import {
+  appendProblemNoteThroughBackground,
+  uploadThroughBackground,
+} from "../upload";
 
 const STATUS_MARKER_ID = "algorithmhub-programmers-status-marker";
 
@@ -28,12 +32,40 @@ type ProgrammersProblemData = {
   link: string;
 };
 
+type SyncedProblemContext = {
+  settings: ExtensionSettings;
+  job: UploadJob;
+  repositoryUrl: string;
+};
+
 function isProgrammersProblemPage(url: URL) {
   return (
     url.hostname.includes("programmers.co.kr") &&
     url.pathname.includes("/learn/courses/") &&
     url.pathname.includes("/lessons/")
   );
+}
+
+function formatArchiveStamp(date = new Date()) {
+  const format = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+
+  return format
+    .format(date)
+    .replace(" ", "_")
+    .replaceAll(":", "-");
+}
+
+function createArchiveFileName(extension: string) {
+  return `${formatArchiveStamp()}-${Date.now().toString().slice(-4)}.${extension}`;
 }
 
 function isSubmitButtonElement(button: HTMLButtonElement | null) {
@@ -159,20 +191,22 @@ function renderStatusContent(marker: HTMLElement, text: string) {
   marker.append(icon, label);
 }
 
-function setStatusLink(marker: HTMLElement, url?: string) {
+function setStatusLink(
+  marker: HTMLElement,
+  action?: () => void,
+  title?: string
+) {
   marker.onclick = null;
 
-  if (!url) {
+  if (!action) {
     marker.style.cursor = "default";
     marker.removeAttribute("title");
     return;
   }
 
   marker.style.cursor = "pointer";
-  marker.title = "Open synced commit";
-  marker.onclick = () => {
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
+  marker.title = title ?? "Open synced actions";
+  marker.onclick = action;
 }
 
 function positionFooterMarker(marker: HTMLElement) {
@@ -220,7 +254,8 @@ async function prepareFooterStatusSlot() {
 function setInlineStatus(
   text: string,
   tone: "working" | "success" | "error",
-  url?: string
+  action?: () => void,
+  actionTitle?: string
 ) {
   const marker = ensureStatusMarker();
   if (!marker) {
@@ -228,7 +263,7 @@ function setInlineStatus(
   }
 
   renderStatusContent(marker, text);
-  setStatusLink(marker, tone === "success" ? url : undefined);
+  setStatusLink(marker, tone === "success" ? action : undefined, actionTitle);
 
   if (marker.style.position === "absolute") {
     scheduleFooterMarkerPosition(marker);
@@ -518,6 +553,11 @@ function buildUploadJob(data: ProgrammersProblemData, settings: ExtensionSetting
     content: data.code,
   });
 
+  job = addUploadFile(job, {
+    path: `archives/${createArchiveFileName(data.languageExtension)}`,
+    content: data.code,
+  });
+
   if (settings.platforms.programmers.createProblemReadme) {
     job = addUploadFile(job, {
       path: "README.md",
@@ -546,11 +586,13 @@ function createSubmissionHandler() {
   let lastUploadedKey = "";
   let lastTriggeredAt = 0;
   let lastPathname = window.location.pathname;
+  let latestSyncContext: SyncedProblemContext | null = null;
 
   return async function handleSubmission() {
     if (window.location.pathname !== lastPathname) {
       lastPathname = window.location.pathname;
       lastUploadedKey = "";
+      latestSyncContext = null;
       clearInlineStatus();
     }
 
@@ -590,23 +632,86 @@ function createSubmissionHandler() {
       const data = parseProgrammersProblemData();
       const uploadKey = `${data.problemId}:${data.language}:${data.code.length}`;
       if (uploadKey === lastUploadedKey) {
-        setInlineStatus("Synced", "success");
+        setInlineStatus(
+          "Synced",
+          "success",
+          latestSyncContext
+            ? () => {
+                const context = latestSyncContext;
+                if (!context) {
+                  return;
+                }
+
+                openSyncedActionsModal({
+                  locale: context.settings.locale,
+                  title: context.job.title,
+                  onOpenRepository: () => {
+                    window.open(context.repositoryUrl, "_blank", "noopener,noreferrer");
+                  },
+                  onSaveNote: async (note: string) => {
+                    const payload: ProblemNoteRequest = {
+                      platform: context.job.platform,
+                      problemId: context.job.problemId,
+                      title: context.job.title,
+                      directory: context.job.directory,
+                      note,
+                    };
+
+                    await appendProblemNoteThroughBackground(payload);
+                  },
+                });
+              }
+            : undefined,
+          "Open synced actions"
+        );
         return;
       }
 
+      latestSyncContext = null;
       const job = buildUploadJob(data, settings);
       const record = await Promise.all([uploadThroughBackground(job), wait(700)]).then(
         ([uploadRecord]) => uploadRecord
       );
       lastUploadedKey = uploadKey;
+      latestSyncContext = {
+        settings,
+        job,
+        repositoryUrl: `https://github.com/${record.repository}/tree/${record.branch}/${encodeURI(
+          job.directory
+        )}`,
+      };
       setInlineStatus(
         "Synced",
         "success",
-        `https://github.com/${record.repository}/tree/${record.branch}/${encodeURI(
-          record.filePaths[0]?.split("/").slice(0, -1).join("/") ?? ""
-        )}`
+        () => {
+          const context = latestSyncContext;
+          if (!context) {
+            return;
+          }
+
+          openSyncedActionsModal({
+            locale: context.settings.locale,
+            title: context.job.title,
+            onOpenRepository: () => {
+              window.open(context.repositoryUrl, "_blank", "noopener,noreferrer");
+            },
+            onSaveNote: async (note: string) => {
+              const payload: ProblemNoteRequest = {
+                platform: context.job.platform,
+                problemId: context.job.problemId,
+                title: context.job.title,
+                directory: context.job.directory,
+                note,
+              };
+
+              await appendProblemNoteThroughBackground(payload);
+            },
+          });
+        },
+        "Open synced actions"
       );
     } catch {
+      latestSyncContext = null;
       setInlineStatus("Sync failed", "error");
     }
   };

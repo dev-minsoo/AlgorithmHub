@@ -91,6 +91,37 @@ function withRootSummaryReadme(
   };
 }
 
+function formatNoteDate(date = new Date()) {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function formatProblemNote(note: string) {
+  const lines = note
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) {
+    throw new Error("Add at least one line to save a note.");
+  }
+
+  return `## ${formatNoteDate()}\n\n${lines.map((line) => `- ${line}`).join("\n")}`;
+}
+
+function appendProblemNote(existingContent: string | null, note: string) {
+  const nextEntry = formatProblemNote(note);
+  if (!existingContent?.trim()) {
+    return `${nextEntry}\n`;
+  }
+
+  return `${existingContent.trimEnd()}\n\n${nextEntry}\n`;
+}
+
 function openWelcomePage() {
   const url = chrome.runtime.getURL("welcome.html");
   void chrome.tabs.create({ url, active: true });
@@ -465,6 +496,65 @@ async function handleUploadJobMessage(
   }
 }
 
+async function handleAppendProblemNoteMessage(
+  message: Extract<RuntimeMessage, { type: "APPEND_PROBLEM_NOTE" }>
+): Promise<RuntimeMessageResponse> {
+  const settings = await getSettings();
+  const token = settings.github.token.trim();
+  const repository = settings.github.repository.trim();
+
+  if (!token || !repository) {
+    return {
+      type: "APPEND_PROBLEM_NOTE_RESULT",
+      ok: false,
+      problemId: message.payload.problemId,
+      reason: "GitHub token and repository must be configured.",
+    };
+  }
+
+  try {
+    const github = createGitHubClient(token);
+    const repo = await github.getRepository(repository);
+    const branch = settings.github.branch.trim() || repo.default_branch;
+    const notePath = `${message.payload.directory}/NOTE.md`;
+    const existingContent = await github.getRepositoryFileContent(
+      repository,
+      notePath,
+      branch
+    );
+    const job: UploadJob = {
+      id: `note:${message.payload.platform}:${message.payload.problemId}:${Date.now()}`,
+      platform: message.payload.platform,
+      problemId: message.payload.problemId,
+      title: message.payload.title,
+      directory: message.payload.directory,
+      commitMessage: `[${message.payload.platform}][Note] ${message.payload.title} - AlgorithmHub`,
+      files: [
+        {
+          path: "NOTE.md",
+          content: appendProblemNote(existingContent, message.payload.note),
+        },
+      ],
+      rootFiles: [],
+    };
+    const record = await executeUploadJob(job, settings);
+    await saveUploadRecord(record);
+
+    return {
+      type: "APPEND_PROBLEM_NOTE_RESULT",
+      ok: true,
+      record,
+    };
+  } catch (error) {
+    return {
+      type: "APPEND_PROBLEM_NOTE_RESULT",
+      ok: false,
+      problemId: message.payload.problemId,
+      reason: error instanceof Error ? error.message : "Failed to save note.",
+    };
+  }
+}
+
 chrome.runtime.onInstalled.addListener(async () => {
   const { settings } = await chrome.storage.local.get("settings");
 
@@ -512,6 +602,9 @@ chrome.runtime.onMessage.addListener(
           return;
         case "UPLOAD_JOB":
           sendResponse(await handleUploadJobMessage(message));
+          return;
+        case "APPEND_PROBLEM_NOTE":
+          sendResponse(await handleAppendProblemNoteMessage(message));
           return;
       }
     })();

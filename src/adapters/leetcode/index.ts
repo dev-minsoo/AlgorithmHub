@@ -7,9 +7,13 @@ import {
 import { sendRuntimeMessage } from "../../shared/runtime";
 import type { RuntimeMessageResponse } from "../../core/types/messages";
 import type { ExtensionSettings } from "../../core/types/domain";
-import type { UploadJob } from "../../core/types/upload";
+import type { ProblemNoteRequest, UploadJob } from "../../core/types/upload";
 import type { PlatformAdapter } from "../types";
-import { uploadThroughBackground } from "../upload";
+import { openSyncedActionsModal } from "../problemActionsModal";
+import {
+  appendProblemNoteThroughBackground,
+  uploadThroughBackground,
+} from "../upload";
 
 const SUBMIT_BUTTON_SELECTOR = '[data-e2e-locator="console-submit-button"]';
 const SUBMISSION_RESULT_SELECTOR = '[data-e2e-locator="submission-result"]';
@@ -67,6 +71,12 @@ type GraphQLResponse<T> = {
   errors?: Array<{ message: string }>;
 };
 
+type SyncedProblemContext = {
+  settings: ExtensionSettings;
+  job: UploadJob;
+  repositoryUrl: string;
+};
+
 function isProblemPage(url: URL) {
   return url.hostname.includes("leetcode.com") && url.pathname.includes("/problems/");
 }
@@ -116,6 +126,28 @@ function formatStats(details: LeetCodeSubmissionDetails) {
 
 function escapePipe(value: string) {
   return value.replace(/\|/g, "\\|");
+}
+
+function formatArchiveStamp(date = new Date()) {
+  const format = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+
+  return format
+    .format(date)
+    .replace(" ", "_")
+    .replaceAll(":", "-");
+}
+
+function createArchiveFileName(extension: string, uniqueSuffix: string) {
+  return `${formatArchiveStamp()}_${uniqueSuffix}${extension}`;
 }
 
 function createProblemReadme(
@@ -207,26 +239,29 @@ function renderStatusContent(marker: HTMLElement, text: string) {
   marker.append(icon, label);
 }
 
-function setStatusLink(marker: HTMLElement, url?: string) {
+function setStatusLink(
+  marker: HTMLElement,
+  action?: () => void,
+  title?: string
+) {
   marker.onclick = null;
 
-  if (!url) {
+  if (!action) {
     marker.style.cursor = "default";
     marker.removeAttribute("title");
     return;
   }
 
   marker.style.cursor = "pointer";
-  marker.title = "Open synced commit";
-  marker.onclick = () => {
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
+  marker.title = title ?? "Open synced actions";
+  marker.onclick = action;
 }
 
 function setInlineStatus(
   text: string,
   tone: "working" | "success" | "error",
-  url?: string
+  action?: () => void,
+  actionTitle?: string
 ) {
   const marker = ensureStatusMarker();
   if (!marker) {
@@ -234,7 +269,7 @@ function setInlineStatus(
   }
 
   renderStatusContent(marker, text);
-  setStatusLink(marker, tone === "success" ? url : undefined);
+  setStatusLink(marker, tone === "success" ? action : undefined, actionTitle);
 
   if (tone === "working") {
     marker.style.background = "#1f2937";
@@ -428,6 +463,11 @@ function buildUploadJob(
     content: details.code,
   });
 
+  job = addUploadFile(job, {
+    path: `archives/${createArchiveFileName(extension, submissionId)}`,
+    content: details.code,
+  });
+
   if (settings.platforms.leetcode.createProblemReadme) {
     job = addUploadFile(job, {
       path: "README.md",
@@ -448,6 +488,7 @@ function buildUploadJob(
 function createSubmissionHandler() {
   const handledSubmissionIds = new Set<string>();
   let lastTriggerAt = 0;
+  let latestSyncContext: SyncedProblemContext | null = null;
 
   return async function handleSubmissionTrigger() {
     const settings = await getSettings();
@@ -484,6 +525,7 @@ function createSubmissionHandler() {
         return;
       }
 
+      latestSyncContext = null;
       setInlineStatus("Syncing...", "working");
       const details = await getSubmissionDetails(submissionId);
 
@@ -495,14 +537,45 @@ function createSubmissionHandler() {
       const record = await Promise.all([uploadThroughBackground(job), wait(700)]).then(
         ([uploadRecord]) => uploadRecord
       );
+      latestSyncContext = {
+        settings,
+        job,
+        repositoryUrl: `https://github.com/${record.repository}/tree/${record.branch}/${encodeURI(
+          job.directory
+        )}`,
+      };
       setInlineStatus(
         "Synced",
         "success",
-        `https://github.com/${record.repository}/tree/${record.branch}/${encodeURI(
-          record.filePaths[0]?.split("/").slice(0, -1).join("/") ?? ""
-        )}`
+        () => {
+          const context = latestSyncContext;
+          if (!context) {
+            return;
+          }
+
+          openSyncedActionsModal({
+            locale: context.settings.locale,
+            title: context.job.title,
+            onOpenRepository: () => {
+              window.open(context.repositoryUrl, "_blank", "noopener,noreferrer");
+            },
+            onSaveNote: async (note: string) => {
+              const payload: ProblemNoteRequest = {
+                platform: context.job.platform,
+                problemId: context.job.problemId,
+                title: context.job.title,
+                directory: context.job.directory,
+                note,
+              };
+
+              await appendProblemNoteThroughBackground(payload);
+            },
+          });
+        },
+        "Open synced actions"
       );
     } catch {
+      latestSyncContext = null;
       setInlineStatus("Sync failed", "error");
     }
   };

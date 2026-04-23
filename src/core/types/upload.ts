@@ -27,3 +27,11 @@ export type UploadRecord = {
   uploadedAt: number;
   filePaths: string[];
 };
+
+export type ProblemNoteRequest = {
+  platform: PlatformId;
+  problemId: string;
+  title: string;
+  directory: string;
+  note: string;
+};

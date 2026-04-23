@@ -3,7 +3,7 @@ import type {
   ExtensionSettings,
   RepositoryInfo,
 } from "./domain";
-import type { UploadJob, UploadRecord } from "./upload";
+import type { ProblemNoteRequest, UploadJob, UploadRecord } from "./upload";
 
 export type RuntimeMessage =
   | { type: "PING" }
@@ -20,7 +20,8 @@ export type RuntimeMessage =
   | { type: "CREATE_GITHUB_REPOSITORY"; name: string; private: boolean }
   | { type: "LINK_GITHUB_REPOSITORY"; repository: string }
   | { type: "DISCONNECT_GITHUB_REPOSITORY" }
-  | { type: "UPLOAD_JOB"; job: UploadJob };
+  | { type: "UPLOAD_JOB"; job: UploadJob }
+  | { type: "APPEND_PROBLEM_NOTE"; payload: ProblemNoteRequest };
 
 export type RuntimeMessageResponse =
   | { type: "PONG"; timestamp: number }
@@ -36,3 +37,5 @@ export type RuntimeMessageResponse =
   | { type: "GITHUB_REPOSITORIES"; ok: false; reason: string }
   | { type: "GITHUB_REPOSITORY_UPDATE"; ok: true; settings: ExtensionSettings; repository: RepositoryInfo }
   | { type: "GITHUB_REPOSITORY_UPDATE"; ok: false; reason: string }
+  | { type: "APPEND_PROBLEM_NOTE_RESULT"; ok: true; record: UploadRecord }
+  | { type: "APPEND_PROBLEM_NOTE_RESULT"; ok: false; reason: string; problemId: string };
