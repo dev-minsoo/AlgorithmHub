@@ -9,6 +9,7 @@ import type { RuntimeMessageResponse } from "../../core/types/messages";
 import type { ExtensionSettings } from "../../core/types/domain";
 import type { UploadJob } from "../../core/types/upload";
 import type { PlatformAdapter } from "../types";
+import { burstConfetti } from "../confetti";
 import { uploadThroughBackground } from "../upload";
 
 const SUBMIT_BUTTON_SELECTOR = '[data-e2e-locator="console-submit-button"]';
@@ -243,6 +244,11 @@ function setInlineStatus(
   }
 
   if (tone === "success") {
+    const rect = marker.getBoundingClientRect();
+    burstConfetti({
+      x: rect.left + rect.width / 2,
+      y: Math.max(48, rect.top - 28),
+    });
     marker.style.background = "#052e16";
     marker.style.color = "#bbf7d0";
     return;
