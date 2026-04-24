@@ -354,7 +354,7 @@ export function openSyncedActionsModal(options: SyncedActionsModalOptions) {
     editorFrame.style.borderRadius = "12px";
     editorFrame.style.background = isDark ? "#020617" : "#ffffff";
     editorFrame.style.colorScheme = isDark ? "dark" : "light";
-    editorFrame.setAttribute("sandbox", "allow-scripts allow-same-origin");
+    editorFrame.setAttribute("sandbox", "allow-scripts");
     editorFrame.srcdoc = createEditorDocument({
       isDark,
       placeholder: copy.notePlaceholder,
