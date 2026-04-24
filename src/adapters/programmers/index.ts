@@ -59,14 +59,11 @@ function formatArchiveStamp(date = new Date()) {
     hour12: false,
   });
 
-  return format
-    .format(date)
-    .replace(" ", "_")
-    .replaceAll(":", "-");
+  return format.format(date).replace(" ", "_");
 }
 
 function createArchiveFileName(extension: string) {
-  return `${formatArchiveStamp()}-${Date.now().toString().slice(-4)}.${extension}`;
+  return `${formatArchiveStamp()}.${extension}`;
 }
 
 function isSubmitButtonElement(button: HTMLButtonElement | null) {

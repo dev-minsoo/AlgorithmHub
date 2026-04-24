@@ -141,14 +141,11 @@ function formatArchiveStamp(date = new Date()) {
     hour12: false,
   });
 
-  return format
-    .format(date)
-    .replace(" ", "_")
-    .replaceAll(":", "-");
+  return format.format(date).replace(" ", "_");
 }
 
-function createArchiveFileName(extension: string, uniqueSuffix: string) {
-  return `${formatArchiveStamp()}_${uniqueSuffix}${extension}`;
+function createArchiveFileName(extension: string) {
+  return `${formatArchiveStamp()}${extension}`;
 }
 
 function createProblemReadme(
@@ -470,7 +467,7 @@ function buildUploadJob(
   });
 
   job = addUploadFile(job, {
-    path: `archives/${createArchiveFileName(extension, submissionId)}`,
+    path: `archives/${createArchiveFileName(extension)}`,
     content: details.code,
   });
 

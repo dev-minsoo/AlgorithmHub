@@ -18,7 +18,7 @@ import {
 } from "../../core/github/client";
 import { executeUploadJob } from "../../core/upload/execute";
 import type { RuntimeMessage, RuntimeMessageResponse } from "../../core/types/messages";
-import type { UploadJob } from "../../core/types/upload";
+import type { ProblemNoteRequest, UploadJob } from "../../core/types/upload";
 
 const EXTENSION_NAME = "AlgorithmHub";
 const GITHUB_OAUTH_REDIRECT_URI = "https://github.com/";
@@ -97,6 +97,10 @@ function formatNoteDate(date = new Date()) {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
   }).format(date);
 }
 
@@ -120,6 +124,10 @@ function appendProblemNote(existingContent: string | null, note: string) {
   }
 
   return `${existingContent.trimEnd()}\n\n${nextEntry}\n`;
+}
+
+function formatProblemNoteCommitMessage(payload: ProblemNoteRequest) {
+  return `[Note] ${payload.title} - AlgorithmHub`;
 }
 
 function openWelcomePage() {
@@ -528,7 +536,7 @@ async function handleAppendProblemNoteMessage(
       problemId: message.payload.problemId,
       title: message.payload.title,
       directory: message.payload.directory,
-      commitMessage: `[${message.payload.platform}][Note] ${message.payload.title} - AlgorithmHub`,
+      commitMessage: formatProblemNoteCommitMessage(message.payload),
       files: [
         {
           path: "NOTE.md",
