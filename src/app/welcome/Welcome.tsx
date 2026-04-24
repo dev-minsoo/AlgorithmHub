@@ -8,6 +8,19 @@ import { useResolvedTheme } from "../../shared/theme";
 
 type RepoMode = "" | "new" | "link";
 
+const WELCOME_COPY = {
+  en: {
+    subtitle:
+      "Automatically sync your accepted LeetCode and Programmers solutions to GitHub.",
+    connectTitle: "Connect a repository to get started",
+  },
+  ko: {
+    subtitle:
+      "LeetCode와 프로그래머스 정답 제출을 GitHub에 자동으로 동기화하세요.",
+    connectTitle: "시작하려면 저장소를 연결하세요",
+  },
+} as const;
+
 const emptySettings: ExtensionSettings = {
   locale: "en",
   themeMode: "system",
@@ -70,6 +83,7 @@ export default function Welcome() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const resolvedTheme = useResolvedTheme(settings.themeMode);
+  const copy = WELCOME_COPY[settings.locale];
 
   const loadRepositories = useCallback(async (token = settings.github.token) => {
     if (!token.trim()) {
@@ -249,7 +263,7 @@ export default function Welcome() {
                 resolvedTheme === "dark" ? "text-stone-400" : "text-stone-700"
               }`}
             >
-              Automatically sync your accepted LeetCode and Programmers solutions to GitHub.
+              {copy.subtitle}
             </p>
           </div>
 
@@ -259,7 +273,7 @@ export default function Welcome() {
                 resolvedTheme === "dark" ? "text-stone-50" : "text-stone-900"
               }`}
             >
-              Connect a repository to get started
+              {copy.connectTitle}
             </p>
 
             <div className="mt-6">

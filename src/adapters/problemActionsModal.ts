@@ -15,8 +15,7 @@ const MODAL_COPY = {
     addNote: "Add note",
     noteTitle: "Add note",
     noteDescription: "Each non-empty line will be appended to NOTE.md as a bullet list.",
-    notePlaceholder:
-      "Hash map approach\nEstimated time complexity O(n)\nFaster than my previous attempt",
+    notePlaceholder: "Enter your note",
     back: "Back",
     save: "Save note",
     saving: "Saving...",
@@ -30,8 +29,7 @@ const MODAL_COPY = {
     addNote: "노트 추가",
     noteTitle: "노트 추가",
     noteDescription: "입력한 각 줄은 NOTE.md에 불릿 포인트로 누적 저장됩니다.",
-    notePlaceholder:
-      "해시맵으로 풂\n시간복잡도는 O(n) 정도로 예상\n예전 풀이보다 조건 해석이 빨랐음",
+    notePlaceholder: "노트를 입력하세요",
     back: "뒤로",
     save: "노트 저장",
     saving: "저장 중...",
