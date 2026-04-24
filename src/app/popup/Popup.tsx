@@ -272,7 +272,7 @@ export default function Popup() {
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <BrandWordmark size="sm" />
-              <p className={`mt-1.5 text-[13px] leading-5 ${mutedTextClass}`}>
+              <p className={`mt-1.5 whitespace-nowrap text-[13px] leading-5 ${mutedTextClass}`}>
                 {copy.subtitle}
               </p>
             </div>

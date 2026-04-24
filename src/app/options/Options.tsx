@@ -344,7 +344,7 @@ export default function Options() {
   const [draggedSegment, setDraggedSegment] =
     useState<RepositoryTemplateSegment | null>(null);
   const [extensionEnabled, setExtensionEnabled] = useState(true);
-  const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(true);
 
   useEffect(() => {
     void chrome.runtime
@@ -716,7 +716,7 @@ export default function Options() {
                   {copy.templatesTitle}
                 </p>
                 <p
-                  className={`mt-2 max-w-3xl text-sm leading-6 ${
+                  className={`mt-2 max-w-4xl text-sm leading-6 ${
                     resolvedTheme === "dark" ? "text-stone-400" : "text-stone-700"
                   }`}
                 >

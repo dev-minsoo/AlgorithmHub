@@ -40,6 +40,11 @@ type CreateCommitResponse = {
   sha: string;
 };
 
+type RepositoryContentResponse = {
+  content?: string;
+  encoding?: string;
+};
+
 class GitHubApiError extends Error {
   readonly status: number;
 
@@ -128,6 +133,30 @@ export function createGitHubClient(token: string) {
         content: { path: string; sha: string };
         commit: { sha: string; message: string };
       }>(response);
+    },
+    async getRepositoryFileContent(
+      fullName: string,
+      path: string,
+      branch: string
+    ): Promise<string | null> {
+      const response = await fetch(
+        `https://api.github.com/repos/${fullName}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`,
+        {
+          method: "GET",
+          headers,
+        }
+      );
+
+      if (response.status === 404) {
+        return null;
+      }
+
+      const payload = await handleGitHubResponse<RepositoryContentResponse>(response);
+      if (!payload.content) {
+        return null;
+      }
+
+      return decodeURIComponent(escape(atob(payload.content.replace(/\n/g, ""))));
     },
     async updateRepository(
       fullName: string,
