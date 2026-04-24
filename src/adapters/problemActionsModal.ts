@@ -189,13 +189,21 @@ export function openSyncedActionsModal(options: SyncedActionsModalOptions) {
     "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
   panel.style.position = "relative";
 
+  const modalTitle = document.createElement("p");
+  modalTitle.textContent = "AlgorithmHub";
+  modalTitle.style.margin = "0";
+  modalTitle.style.paddingRight = "32px";
+  modalTitle.style.fontSize = "16px";
+  modalTitle.style.fontWeight = "700";
+  modalTitle.style.color = isDark ? "#f8fafc" : "#0f172a";
+
   const problemTitle = document.createElement("p");
   problemTitle.textContent = options.title;
-  problemTitle.style.margin = "0";
+  problemTitle.style.margin = "6px 0 0";
   problemTitle.style.paddingRight = "32px";
-  problemTitle.style.fontSize = "14px";
+  problemTitle.style.fontSize = "13px";
   problemTitle.style.fontWeight = "600";
-  problemTitle.style.color = isDark ? "#f8fafc" : "#0f172a";
+  problemTitle.style.color = isDark ? "#cbd5e1" : "#334155";
 
   const description = document.createElement("p");
   description.textContent = copy.description;
@@ -432,7 +440,7 @@ export function openSyncedActionsModal(options: SyncedActionsModalOptions) {
   window.addEventListener("message", handleEditorMessage);
   document.addEventListener("keydown", handleEscape, true);
 
-  panel.append(closeButton, problemTitle, description, content);
+  panel.append(closeButton, modalTitle, problemTitle, description, content);
   overlay.appendChild(panel);
   document.body.appendChild(overlay);
   renderActions();

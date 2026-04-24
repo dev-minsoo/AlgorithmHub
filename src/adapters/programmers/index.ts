@@ -589,39 +589,39 @@ function createSubmissionHandler() {
   let latestSyncContext: SyncedProblemContext | null = null;
 
   return async function handleSubmission() {
-    if (window.location.pathname !== lastPathname) {
-      lastPathname = window.location.pathname;
-      lastUploadedKey = "";
-      latestSyncContext = null;
-      clearInlineStatus();
-    }
-
-    const settings = await getSettings();
-
-    if (
-      !settings.platforms.programmers.enabled ||
-      !settings.platforms.programmers.autoUpload
-    ) {
-      return;
-    }
-
-    if (!(await isExtensionEnabled())) {
-      return;
-    }
-
-    const now = Date.now();
-    if (now - lastTriggeredAt < 1500) {
-      return;
-    }
-    lastTriggeredAt = now;
-
-    const accepted = await waitForAcceptedResult();
-    if (!accepted) {
-      clearInlineStatus();
-      return;
-    }
-
     try {
+      if (window.location.pathname !== lastPathname) {
+        lastPathname = window.location.pathname;
+        lastUploadedKey = "";
+        latestSyncContext = null;
+        clearInlineStatus();
+      }
+
+      const settings = await getSettings();
+
+      if (
+        !settings.platforms.programmers.enabled ||
+        !settings.platforms.programmers.autoUpload
+      ) {
+        return;
+      }
+
+      if (!(await isExtensionEnabled())) {
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastTriggeredAt < 1500) {
+        return;
+      }
+      lastTriggeredAt = now;
+
+      const accepted = await waitForAcceptedResult();
+      if (!accepted) {
+        clearInlineStatus();
+        return;
+      }
+
       if (!(await isExtensionEnabled())) {
         clearInlineStatus();
         return;

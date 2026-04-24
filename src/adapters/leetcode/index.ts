@@ -491,35 +491,35 @@ function createSubmissionHandler() {
   let latestSyncContext: SyncedProblemContext | null = null;
 
   return async function handleSubmissionTrigger() {
-    const settings = await getSettings();
-
-    if (!settings.platforms.leetcode.enabled || !settings.platforms.leetcode.autoUpload) {
-      return;
-    }
-
-    if (!(await isExtensionEnabled())) {
-      return;
-    }
-
-    const now = Date.now();
-    if (now - lastTriggerAt < 1500) {
-      return;
-    }
-    lastTriggerAt = now;
-
-    const submissionId = await waitForSubmissionId();
-    if (!submissionId || handledSubmissionIds.has(submissionId)) {
-      return;
-    }
-
-    const accepted = await waitForAcceptedState();
-    if (!accepted) {
-      clearInlineStatus();
-      return;
-    }
-
-    handledSubmissionIds.add(submissionId);
     try {
+      const settings = await getSettings();
+
+      if (!settings.platforms.leetcode.enabled || !settings.platforms.leetcode.autoUpload) {
+        return;
+      }
+
+      if (!(await isExtensionEnabled())) {
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastTriggerAt < 1500) {
+        return;
+      }
+      lastTriggerAt = now;
+
+      const submissionId = await waitForSubmissionId();
+      if (!submissionId || handledSubmissionIds.has(submissionId)) {
+        return;
+      }
+
+      const accepted = await waitForAcceptedState();
+      if (!accepted) {
+        clearInlineStatus();
+        return;
+      }
+
+      handledSubmissionIds.add(submissionId);
       if (!(await isExtensionEnabled())) {
         clearInlineStatus();
         return;
