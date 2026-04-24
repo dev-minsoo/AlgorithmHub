@@ -644,6 +644,7 @@ function createSubmissionHandler() {
 
                 openSyncedActionsModal({
                   locale: context.settings.locale,
+                  themeMode: context.settings.themeMode,
                   title: context.job.title,
                   onOpenRepository: () => {
                     window.open(context.repositoryUrl, "_blank", "noopener,noreferrer");
@@ -691,6 +692,7 @@ function createSubmissionHandler() {
 
           openSyncedActionsModal({
             locale: context.settings.locale,
+            themeMode: context.settings.themeMode,
             title: context.job.title,
             onOpenRepository: () => {
               window.open(context.repositoryUrl, "_blank", "noopener,noreferrer");
