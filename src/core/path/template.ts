@@ -2,6 +2,7 @@ import type {
   PlatformId,
   RepositoryTemplateSegment,
 } from "../types/domain";
+import { getPlatformDefinition } from "../platforms";
 
 export type RepositoryPathParts = {
   platform: string;
@@ -22,7 +23,7 @@ export function normalizePathSegment(value: string) {
 }
 
 export function getPlatformRootLabel(platform: PlatformId) {
-  return platform === "leetcode" ? "Leetcode" : "프로그래머스";
+  return getPlatformDefinition(platform).rootLabel;
 }
 
 export function buildRepositoryDirectory(

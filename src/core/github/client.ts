@@ -103,7 +103,7 @@ export function createGitHubClient(token: string) {
           private: isPrivate,
           auto_init: false,
           description:
-            "Archive of accepted LeetCode and Programmers solutions, synced by AlgorithmHub.",
+            "Archive of accepted coding challenge solutions, synced by AlgorithmHub.",
         }),
       });
 

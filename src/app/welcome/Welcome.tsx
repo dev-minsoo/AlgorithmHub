@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { consumeWelcomeMode } from "../../core/storage/auth";
 import { getCachedGitHubRepositories } from "../../core/storage/repositories";
+import { DEFAULT_SETTINGS } from "../../core/storage/settings";
 import type { ExtensionSettings, RepositoryInfo } from "../../core/types/domain";
 import type { RuntimeMessageResponse } from "../../core/types/messages";
 import { BrandWordmark } from "../../shared/components/BrandWordmark";
@@ -11,63 +12,15 @@ type RepoMode = "" | "new" | "link";
 const WELCOME_COPY = {
   en: {
     subtitle:
-      "Automatically sync your accepted LeetCode and Programmers solutions to GitHub.",
+      "Automatically sync your accepted LeetCode, Programmers, and HackerRank solutions to GitHub.",
     connectTitle: "Connect a repository to get started",
   },
   ko: {
     subtitle:
-      "LeetCode와 프로그래머스 정답 제출을 GitHub에 자동으로 동기화하세요.",
+      "LeetCode, 프로그래머스, HackerRank 정답 제출을 GitHub에 자동으로 동기화하세요.",
     connectTitle: "시작하려면 저장소를 연결하세요",
   },
 } as const;
-
-const emptySettings: ExtensionSettings = {
-  locale: "en",
-  themeMode: "system",
-  github: {
-    oauthClientId: "",
-    token: "",
-    username: "",
-    repository: "",
-    branch: "",
-  },
-  platforms: {
-    leetcode: {
-      enabled: true,
-      autoUpload: true,
-      createProblemReadme: true,
-      attachNotes: false,
-    },
-    programmers: {
-      enabled: true,
-      autoUpload: true,
-      createProblemReadme: true,
-      attachNotes: false,
-    },
-  },
-  repositoryTemplate: {
-    leetcode: {
-      order: ["platform", "level", "id", "title"],
-      enabled: {
-        platform: true,
-        level: true,
-        id: true,
-        title: true,
-      },
-      combineIdTitle: true,
-    },
-    programmers: {
-      order: ["platform", "level", "id", "title"],
-      enabled: {
-        platform: true,
-        level: true,
-        id: true,
-        title: true,
-      },
-      combineIdTitle: true,
-    },
-  },
-};
 
 function openOptions() {
   const url = chrome.runtime.getURL("options.html");
@@ -75,7 +28,7 @@ function openOptions() {
 }
 
 export default function Welcome() {
-  const [settings, setSettings] = useState<ExtensionSettings>(emptySettings);
+  const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS);
   const [mode, setMode] = useState<RepoMode>("");
   const [repositoryName, setRepositoryName] = useState("");
   const [availableRepositories, setAvailableRepositories] = useState<RepositoryInfo[]>([]);

@@ -17,6 +17,7 @@ import {
   exchangeGitHubOAuthCode,
 } from "../../core/github/client";
 import { executeUploadJob } from "../../core/upload/execute";
+import { PLATFORM_DEFINITIONS, PLATFORM_IDS } from "../../core/platforms";
 import type { RuntimeMessage, RuntimeMessageResponse } from "../../core/types/messages";
 import type { ProblemNoteRequest, UploadJob } from "../../core/types/upload";
 
@@ -25,23 +26,43 @@ const GITHUB_OAUTH_REDIRECT_URI = "https://github.com/";
 const GITHUB_OAUTH_CLIENT_SECRET = "a223258ea8e316e47ee81988e85cada899cfb2d4";
 const INITIAL_REPOSITORY_COMMIT_MESSAGE = "Initial commit - AlgorithmHub";
 
+function createPlatformSummaryRows(summary?: SolvedSummary) {
+  return PLATFORM_IDS.map((platform) => {
+    const definition = PLATFORM_DEFINITIONS[platform];
+    const count = summary ? new Set(summary[platform]).size : 0;
+    return `| ${definition.displayName} | ${count} |`;
+  }).join("\n");
+}
+
+function createPlatformLinks() {
+  return PLATFORM_IDS.map((platform) => {
+    const definition = PLATFORM_DEFINITIONS[platform];
+    return `- [${definition.displayName}](${encodeURI(`./${definition.rootLabel}`)})`;
+  }).join("\n");
+}
+
+function countSolvedProblems(summary: SolvedSummary) {
+  return PLATFORM_IDS.reduce(
+    (total, platform) => total + new Set(summary[platform]).size,
+    0
+  );
+}
+
 function createRepositoryReadme(name: string) {
   return `# ${name}
 
-Archive of accepted LeetCode and Programmers solutions, synced by [AlgorithmHub](https://github.com/dev-minsoo/AlgorithmHub).
+Archive of accepted coding challenge solutions, synced by [AlgorithmHub](https://github.com/dev-minsoo/AlgorithmHub).
 
 ## Summary
 
 | Platform | Solved |
 | --- | ---: |
-| LeetCode | 0 |
-| 프로그래머스 | 0 |
+${createPlatformSummaryRows()}
 | Total | 0 |
 
 ## Platforms
 
-- [LeetCode](./Leetcode)
-- [프로그래머스](./%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%A8%B8%EC%8A%A4)
+${createPlatformLinks()}
 `;
 }
 
@@ -49,26 +70,22 @@ function createRootSummaryReadme(
   repositoryName: string,
   summary: SolvedSummary
 ) {
-  const leetcodeCount = new Set(summary.leetcode).size;
-  const programmersCount = new Set(summary.programmers).size;
-  const totalCount = leetcodeCount + programmersCount;
+  const totalCount = countSolvedProblems(summary);
 
   return `# ${repositoryName}
 
-Archive of accepted LeetCode and Programmers solutions, synced by [AlgorithmHub](https://github.com/dev-minsoo/AlgorithmHub).
+Archive of accepted coding challenge solutions, synced by [AlgorithmHub](https://github.com/dev-minsoo/AlgorithmHub).
 
 ## Summary
 
 | Platform | Solved |
 | --- | ---: |
-| LeetCode | ${leetcodeCount} |
-| 프로그래머스 | ${programmersCount} |
+${createPlatformSummaryRows(summary)}
 | Total | ${totalCount} |
 
 ## Platforms
 
-- [LeetCode](./Leetcode)
-- [프로그래머스](./%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%A8%B8%EC%8A%A4)
+${createPlatformLinks()}
 `;
 }
 
@@ -168,7 +185,7 @@ async function ensureRepositoryInitialized(
   );
   await github.updateRepository(repositoryFullName, {
     description:
-      "Archive of accepted LeetCode and Programmers solutions, synced by AlgorithmHub.",
+      "Archive of accepted coding challenge solutions, synced by AlgorithmHub.",
   });
 }
 
