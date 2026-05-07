@@ -4,6 +4,8 @@ import {
   getPlatformRootLabel,
   TEMPLATE_SEGMENT_LABELS,
 } from "../../core/path/template";
+import { DEFAULT_SETTINGS } from "../../core/storage/settings";
+import { PLATFORM_DEFINITIONS, PLATFORM_IDS } from "../../core/platforms";
 import type {
   ExtensionSettings,
   Locale,
@@ -17,54 +19,6 @@ import { useResolvedTheme } from "../../shared/theme";
 
 const ISSUE_URL = "https://github.com/dev-minsoo/AlgorithmHub/issues";
 const REPOSITORY_URL = "https://github.com/dev-minsoo/AlgorithmHub";
-
-const emptySettings: ExtensionSettings = {
-  locale: "en",
-  themeMode: "system",
-  github: {
-    oauthClientId: "",
-    token: "",
-    username: "",
-    repository: "",
-    branch: "",
-  },
-  platforms: {
-    leetcode: {
-      enabled: true,
-      autoUpload: true,
-      createProblemReadme: true,
-      attachNotes: false,
-    },
-    programmers: {
-      enabled: true,
-      autoUpload: true,
-      createProblemReadme: true,
-      attachNotes: false,
-    },
-  },
-  repositoryTemplate: {
-    leetcode: {
-      order: ["platform", "level", "id", "title"],
-      enabled: {
-        platform: true,
-        level: true,
-        id: true,
-        title: true,
-      },
-      combineIdTitle: true,
-    },
-    programmers: {
-      order: ["platform", "level", "id", "title"],
-      enabled: {
-        platform: true,
-        level: true,
-        id: true,
-        title: true,
-      },
-      combineIdTitle: true,
-    },
-  },
-};
 
 const TEMPLATE_SEGMENTS: RepositoryTemplateSegment[] = [
   "platform",
@@ -92,9 +46,8 @@ const OPTIONS_COPY = {
     templatesEyebrow: "Repository path templates",
     templatesTitle: "Configure each platform separately",
     templatesDescription:
-      "LeetCode and Programmers can use different path templates. When ID is placed directly before Title, AlgorithmHub can combine them into the default format: ID. Title.",
-    templateLeetCode: "LeetCode template",
-    templateProgrammers: "Programmers template",
+      "Each platform can use a different path template. When ID is placed directly before Title, AlgorithmHub can combine them into the default format: ID. Title.",
+    templateLabel: "template",
     templateHint:
       "Drag enabled segments to reorder them. Use the toggle to include or exclude each segment without changing its row position.",
     combine: "Combine ID + Title",
@@ -120,9 +73,8 @@ const OPTIONS_COPY = {
     templatesEyebrow: "저장 경로 템플릿",
     templatesTitle: "플랫폼별로 따로 설정하세요",
     templatesDescription:
-      "LeetCode와 프로그래머스는 서로 다른 경로 템플릿을 사용할 수 있습니다. ID가 Title 바로 앞에 오면 기본 형식인 ID. Title로 합칠 수 있습니다.",
-    templateLeetCode: "LeetCode 템플릿",
-    templateProgrammers: "프로그래머스 템플릿",
+      "각 플랫폼은 서로 다른 경로 템플릿을 사용할 수 있습니다. ID가 Title 바로 앞에 오면 기본 형식인 ID. Title로 합칠 수 있습니다.",
+    templateLabel: "템플릿",
     templateHint:
       "활성화된 세그먼트를 드래그해서 순서를 바꾸고, 토글로 포함 여부를 제어하세요.",
     combine: "ID + Title 합치기",
@@ -167,13 +119,14 @@ function PathTemplateCard({
   resolvedTheme: "light" | "dark";
 }) {
   const template = settings.repositoryTemplate[platform];
+  const definition = PLATFORM_DEFINITIONS[platform];
   const previewPath = buildRepositoryDirectory(template, {
     platform: getPlatformRootLabel(platform),
-    level: platform === "leetcode" ? "Easy" : "Lv. 2",
-    id: platform === "leetcode" ? "0001" : "12909",
-    title: platform === "leetcode" ? "Two Sum" : "올바른 괄호",
+    level: definition.pathPreview.level,
+    id: definition.pathPreview.id,
+    title: definition.pathPreview.title,
   });
-  const fileName = platform === "leetcode" ? "solution.py" : "solution.js";
+  const fileName = definition.pathPreview.fileName;
 
   return (
     <div
@@ -184,7 +137,7 @@ function PathTemplateCard({
       }`}
     >
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">
-        {platform === "leetcode" ? copy.templateLeetCode : copy.templateProgrammers}
+        {definition.displayName} {copy.templateLabel}
       </p>
       <p
         className={`mt-2 text-sm leading-6 ${
@@ -340,7 +293,7 @@ function PathTemplateCard({
 }
 
 export default function Options() {
-  const [settings, setSettings] = useState<ExtensionSettings>(emptySettings);
+  const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS);
   const [draggedSegment, setDraggedSegment] =
     useState<RepositoryTemplateSegment | null>(null);
   const [extensionEnabled, setExtensionEnabled] = useState(true);
@@ -594,30 +547,25 @@ export default function Options() {
               >
                 {copy.solving}
               </p>
-              <a
-                className={`font-medium transition ${
-                  resolvedTheme === "dark"
-                    ? "text-cyan-300 hover:text-cyan-200"
-                    : "text-cyan-700 hover:text-cyan-800"
-                }`}
-                href="https://leetcode.com/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                LeetCode
-              </a>
-              <a
-                className={`font-medium transition ${
-                  resolvedTheme === "dark"
-                    ? "text-cyan-300 hover:text-cyan-200"
-                    : "text-cyan-700 hover:text-cyan-800"
-                }`}
-                href="https://school.programmers.co.kr/learn/challenges"
-                target="_blank"
-                rel="noreferrer"
-              >
-                프로그래머스
-              </a>
+              {PLATFORM_IDS.map((platform) => {
+                const definition = PLATFORM_DEFINITIONS[platform];
+
+                return (
+                  <a
+                    key={platform}
+                    className={`font-medium transition ${
+                      resolvedTheme === "dark"
+                        ? "text-cyan-300 hover:text-cyan-200"
+                        : "text-cyan-700 hover:text-cyan-800"
+                    }`}
+                    href={definition.solveUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {definition.displayName}
+                  </a>
+                );
+              })}
             </div>
           </div>
 
@@ -736,29 +684,21 @@ export default function Options() {
             </button>
 
             {templatesOpen ? (
-              <div className="mt-5 grid gap-4 xl:grid-cols-2">
-                <PathTemplateCard
-                  platform="leetcode"
-                  settings={settings}
-                  draggedSegment={draggedSegment}
-                  setDraggedSegment={setDraggedSegment}
-                  onUpdateOrder={updateTemplateOrder}
-                  onToggleSegment={toggleTemplateSegment}
-                  onToggleCombine={toggleCombineIdTitle}
-                  copy={copy}
-                  resolvedTheme={resolvedTheme}
-                />
-                <PathTemplateCard
-                  platform="programmers"
-                  settings={settings}
-                  draggedSegment={draggedSegment}
-                  setDraggedSegment={setDraggedSegment}
-                  onUpdateOrder={updateTemplateOrder}
-                  onToggleSegment={toggleTemplateSegment}
-                  onToggleCombine={toggleCombineIdTitle}
-                  copy={copy}
-                  resolvedTheme={resolvedTheme}
-                />
+              <div className="mt-5 grid gap-4 xl:grid-cols-3">
+                {PLATFORM_IDS.map((platform) => (
+                  <PathTemplateCard
+                    key={platform}
+                    platform={platform}
+                    settings={settings}
+                    draggedSegment={draggedSegment}
+                    setDraggedSegment={setDraggedSegment}
+                    onUpdateOrder={updateTemplateOrder}
+                    onToggleSegment={toggleTemplateSegment}
+                    onToggleCombine={toggleCombineIdTitle}
+                    copy={copy}
+                    resolvedTheme={resolvedTheme}
+                  />
+                ))}
               </div>
             ) : null}
           </div>

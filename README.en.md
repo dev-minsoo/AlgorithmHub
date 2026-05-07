@@ -10,7 +10,7 @@
 
 <p align="center">
   A Chrome extension that automatically syncs accepted
-  <strong>LeetCode</strong> and <strong>Programmers</strong> submissions to GitHub.
+  <strong>LeetCode</strong>, <strong>Programmers</strong>, and <strong>HackerRank</strong> submissions to GitHub.
 </p>
 
 <p align="center">
@@ -30,11 +30,12 @@ from:
 
 - LeetCode
 - Programmers
+- HackerRank
 
 ## Highlights
 
 - Sync accepted submissions directly to GitHub
-- Use one extension for both LeetCode and Programmers
+- Use one extension for LeetCode, Programmers, and HackerRank
 - Create a new repository or connect an existing one
 - Customize repository path templates by platform
 - Keep a clean root README with platform-based summary
@@ -42,20 +43,20 @@ from:
 ## How does AlgorithmHub work?
 
 1. Connect your GitHub account and repository
-2. Solve a problem on LeetCode or Programmers
+2. Solve a problem on LeetCode, Programmers, or HackerRank
 3. Submit an accepted solution
 4. Let AlgorithmHub sync the solution files to GitHub automatically
 
-| LeetCode Demo | Programmers Demo |
-| --- | --- |
-| ![LeetCode demo](./docs/leetcode-demo.gif) | ![Programmers demo](./docs/programmers-demo.gif) |
+| LeetCode Demo | Programmers Demo | HackerRank Demo |
+| --- | --- | --- |
+| ![LeetCode demo](./docs/leetcode-demo.gif) | ![Programmers demo](./docs/programmers-demo.gif) | ![HackerRank demo](./docs/hackerrank-demo.gif) |
 
 ## Usage
 
 1. Open the extension popup
 2. Authenticate with GitHub
 3. Create a repository or connect an existing one
-4. Solve a problem on LeetCode or Programmers
+4. Solve a problem on LeetCode, Programmers, or HackerRank
 5. Submit an accepted solution
 6. Let AlgorithmHub sync it to GitHub
 
