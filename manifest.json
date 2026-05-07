@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AlgorithmHub",
-  "description": "Unified Chrome extension that uploads accepted LeetCode and Programmers solutions to GitHub.",
+  "description": "Unified Chrome extension that uploads accepted LeetCode, Programmers, and HackerRank solutions to GitHub.",
   "version": "1.0.0",
   "icons": {
     "16": "icons/icon-16.png",
@@ -26,6 +26,7 @@
   "host_permissions": [
     "https://leetcode.com/*",
     "https://school.programmers.co.kr/*",
+    "https://www.hackerrank.com/*",
     "https://github.com/*",
     "https://api.github.com/*"
   ],
@@ -34,9 +35,16 @@
       "matches": [
         "https://leetcode.com/*",
         "https://school.programmers.co.kr/*",
+        "https://www.hackerrank.com/*",
         "https://github.com/*"
       ],
       "js": ["content.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["hackerrank-page-bridge.js"],
+      "matches": ["https://www.hackerrank.com/*"]
     }
   ]
 }

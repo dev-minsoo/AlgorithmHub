@@ -10,6 +10,7 @@ export type PlatformAdapter = {
   platform: PlatformId;
   canHandle(url: URL): boolean;
   boot(context: PlatformAdapterContext): void | Promise<void>;
+  onUrlChange?(url: URL): void;
 };
 
 export type SubmissionUploadDelegate = (job: UploadJob) => Promise<void>;
