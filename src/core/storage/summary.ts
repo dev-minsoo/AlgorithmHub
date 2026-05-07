@@ -1,4 +1,5 @@
 import type { PlatformId } from "../types/domain";
+import { PLATFORM_IDS } from "../platforms";
 
 const SOLVED_SUMMARY_KEY = "solvedSummary";
 
@@ -8,10 +9,10 @@ export async function getSolvedSummary(): Promise<SolvedSummary> {
   const stored = await chrome.storage.local.get(SOLVED_SUMMARY_KEY);
   const summary = stored[SOLVED_SUMMARY_KEY] as SolvedSummary | undefined;
 
-  return {
-    leetcode: summary?.leetcode ?? [],
-    programmers: summary?.programmers ?? [],
-  };
+  return PLATFORM_IDS.reduce((nextSummary, platform) => {
+    nextSummary[platform] = summary?.[platform] ?? [];
+    return nextSummary;
+  }, {} as SolvedSummary);
 }
 
 export async function saveSolvedSummary(summary: SolvedSummary): Promise<SolvedSummary> {

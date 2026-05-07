@@ -1,4 +1,4 @@
-export type PlatformId = "leetcode" | "programmers";
+export type PlatformId = "leetcode" | "programmers" | "hackerrank";
 export type RepositoryTemplateSegment = "platform" | "level" | "id" | "title";
 export type Locale = "ko" | "en";
 export type ThemeMode = "system" | "light" | "dark";

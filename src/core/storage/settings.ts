@@ -1,8 +1,11 @@
 import type {
   DeepPartial,
   ExtensionSettings,
+  PlatformId,
+  PlatformSettings,
   RepositoryTemplateSegment,
 } from "../types/domain";
+import { PLATFORM_IDS } from "../platforms";
 
 export const DEFAULT_GITHUB_OAUTH_CLIENT_ID = "Ov23liLxRpRqCrpLKjYy";
 
@@ -24,6 +27,15 @@ function createDefaultTemplateConfig() {
   };
 }
 
+function createDefaultPlatformSettings(): PlatformSettings {
+  return {
+    enabled: true,
+    autoUpload: true,
+    createProblemReadme: true,
+    attachNotes: false,
+  };
+}
+
 export const DEFAULT_SETTINGS: ExtensionSettings = {
   locale: "en",
   themeMode: "system",
@@ -35,24 +47,65 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
     branch: "",
   },
   platforms: {
-    leetcode: {
-      enabled: true,
-      autoUpload: true,
-      createProblemReadme: true,
-      attachNotes: false,
-    },
-    programmers: {
-      enabled: true,
-      autoUpload: true,
-      createProblemReadme: true,
-      attachNotes: false,
-    },
+    leetcode: createDefaultPlatformSettings(),
+    programmers: createDefaultPlatformSettings(),
+    hackerrank: createDefaultPlatformSettings(),
   },
   repositoryTemplate: {
     leetcode: createDefaultTemplateConfig(),
     programmers: createDefaultTemplateConfig(),
+    hackerrank: createDefaultTemplateConfig(),
   },
 };
+
+function mergePlatformSettings(
+  current: ExtensionSettings["platforms"],
+  patch: DeepPartial<ExtensionSettings>["platforms"]
+): ExtensionSettings["platforms"] {
+  return PLATFORM_IDS.reduce((platforms, platform) => {
+    platforms[platform] = {
+      ...current[platform],
+      ...(patch?.[platform] as Partial<PlatformSettings> | undefined),
+    };
+    return platforms;
+  }, {} as Record<PlatformId, PlatformSettings>);
+}
+
+function sanitizeTemplateOrder(order: unknown) {
+  if (!Array.isArray(order)) {
+    return null;
+  }
+
+  return order.filter(
+    (segment): segment is RepositoryTemplateSegment =>
+      segment === "platform" ||
+      segment === "level" ||
+      segment === "id" ||
+      segment === "title"
+  );
+}
+
+function mergeRepositoryTemplate(
+  current: ExtensionSettings["repositoryTemplate"],
+  patch: DeepPartial<ExtensionSettings>["repositoryTemplate"]
+): ExtensionSettings["repositoryTemplate"] {
+  return PLATFORM_IDS.reduce((repositoryTemplate, platform) => {
+    const patchTemplate = patch?.[platform];
+
+    repositoryTemplate[platform] = {
+      ...current[platform],
+      ...patchTemplate,
+      order: sanitizeTemplateOrder(patchTemplate?.order) ?? current[platform].order,
+      enabled: {
+        ...current[platform].enabled,
+        ...patchTemplate?.enabled,
+      },
+      combineIdTitle:
+        patchTemplate?.combineIdTitle ?? current[platform].combineIdTitle,
+    };
+    return repositoryTemplate;
+  }, {} as ExtensionSettings["repositoryTemplate"]);
+}
 
 function mergeSettings(
   current: ExtensionSettings,
@@ -65,50 +118,11 @@ function mergeSettings(
       ...current.github,
       ...patch.github,
     },
-    platforms: {
-      leetcode: {
-        ...current.platforms.leetcode,
-        ...patch.platforms?.leetcode,
-      },
-      programmers: {
-        ...current.platforms.programmers,
-        ...patch.platforms?.programmers,
-      },
-    },
-    repositoryTemplate: {
-      leetcode: {
-        ...current.repositoryTemplate.leetcode,
-        ...patch.repositoryTemplate?.leetcode,
-        order:
-          patch.repositoryTemplate?.leetcode?.order?.filter(
-            (segment): segment is "platform" | "level" | "id" | "title" =>
-              Boolean(segment)
-          ) ?? current.repositoryTemplate.leetcode.order,
-        enabled: {
-          ...current.repositoryTemplate.leetcode.enabled,
-          ...patch.repositoryTemplate?.leetcode?.enabled,
-        },
-        combineIdTitle:
-          patch.repositoryTemplate?.leetcode?.combineIdTitle ??
-          current.repositoryTemplate.leetcode.combineIdTitle,
-      },
-      programmers: {
-        ...current.repositoryTemplate.programmers,
-        ...patch.repositoryTemplate?.programmers,
-        order:
-          patch.repositoryTemplate?.programmers?.order?.filter(
-            (segment): segment is "platform" | "level" | "id" | "title" =>
-              Boolean(segment)
-          ) ?? current.repositoryTemplate.programmers.order,
-        enabled: {
-          ...current.repositoryTemplate.programmers.enabled,
-          ...patch.repositoryTemplate?.programmers?.enabled,
-        },
-        combineIdTitle:
-          patch.repositoryTemplate?.programmers?.combineIdTitle ??
-          current.repositoryTemplate.programmers.combineIdTitle,
-      },
-    },
+    platforms: mergePlatformSettings(current.platforms, patch.platforms),
+    repositoryTemplate: mergeRepositoryTemplate(
+      current.repositoryTemplate,
+      patch.repositoryTemplate
+    ),
   };
 }
 
